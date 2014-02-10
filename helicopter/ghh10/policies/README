@@ -1,0 +1,4 @@
+race - 24 safe exploration policies evolved using selection races
+resampling_02 - exploration policies evolved with resampling (2x)
+resampling_05 - exploration policies evolved with resampling (5x)
+resampling_10 - exploration policies evolved with resampling (10x)

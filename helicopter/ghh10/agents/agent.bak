@@ -1,0 +1,242 @@
+################################################################################
+#                      OLD STUFF, needs to be sorted out!                      #
+################################################################################
+
+
+
+import sys
+sys.path.append('/home/koppejan/projects')
+
+import random
+from utils import *
+from eonn.organism import *
+from helicopter.helicopter import *
+#from numpy.stats import bayes_mvs
+import stats
+
+
+# EVALUATION
+
+#def evaluate(pool, feval, k):
+#  """ Evaluate each organism in pool k times using feval. """
+#  for org in pool:
+#    for i in range(k):
+#      org.evals.append(feval(org.policy))
+
+
+class Agent:
+  """ Model-Free agent, chooses best policy from a set of pre-trained policies. """
+  def __init__(self):
+    """ Initialize agent. """
+    self.episode = 0
+    self.pool = [Organism(genome) for genome in POLICIES]
+
+  def start(self):
+    """ Start a new episode """
+    self.set_policy()
+    self.episode += 1
+    self.reward = 0
+    self.steps = 0
+
+  def step(self, state, reward):
+    """ Choose an action based on the current state. """
+    self.steps += 1
+    self.reward += reward
+    return self.org.policy.propagate(state, 1)
+
+  def end(self, reward):
+    """ Ends the current episode """
+    self.reward += reward
+    self.org.evals.append(self.reward)
+    print '%i %i %.2f' % (self.episode, self.steps, self.reward)
+
+  def set_policy(self):
+    """ Set control policy based on current episode. """
+    if self.episode < len(self.pool):
+      self.org = self.pool[self.episode]
+    else:
+      self.org = min(self.pool) # Minimizing error
+
+
+
+def set_bounds(pool, alpha):
+  """ Set lower- and upper bound on fitness with confidence level alpha. """
+  for org in pool:
+    org.lb, org.ub = cint(org.evals, alpha)
+
+def cint(data, alpha=0.95):
+  """ Compute confidence interval around the mean for the given data """
+  n = len(data)
+  m, se = mean(data), std(data)/sqrt(n-1)
+  c = stats.cached_tinv(1-alpha, n-1) * se
+  return m-c, m+c
+
+def cint_reduction(data):
+  """ Maximal attainable confidence interval reduction of data. """
+  assert len(data) > 1
+  m = mean(data)
+  f = lambda x, y: y - x
+  return reduce(f, cint(data)) - reduce(f, cint(data + [m]))
+
+# SELECTION
+
+def rank_select(pool, feval, mu, k=1):
+  """ Naive rank-based selection. """
+  evaluate(pool, feval, k)
+  return sorted(pool, reverse=True)[:mu], len(pool)*k
+
+def race_select(pool, feval, mu, alpha):
+  """ Selection races to efficiently pick the best mu organisms. """
+  U, S, D = list(pool), [], [] # Undecided, selected & discarded
+  evaluate(U, feval)
+  n = evals = len(U)
+  while len(S) < mu:
+    evaluate(U, feval)
+    set_bounds(U, alpha)
+    evals += len(U)
+    for i, x in enumerate(U):
+      if sum([x.lb > y.ub for y in U]) >= n - mu - len(D):
+        S.append(U.pop(i))
+      elif sum([x.ub < y.lb for y in U]) >= mu - len(S):
+        D.append(U.pop(i))
+  if len(S) < mu:
+    S.extend(sorted(U, reverse=True)[:mu - len(S)])
+  return S, evals
+
+def optimistic_race_select(pool, feval, mu, alpha):
+  """ Optimistic selection races, even further minimizing evaluations. """
+  U, S, D = list(pool), [], []
+  evaluate(U, feval, 2)
+  set_bounds(U, alpha)
+  n, evals = len(pool), 2 * len(U)
+  while len(S) < mu:
+    x = max(U, key=lambda x: cint_reduction(x.evals))
+    evaluate([x], feval)
+    set_bounds([x], alpha)
+    evals += 1
+    for i, x in enumerate(U):
+      if sum([x.lb > y.ub for y in U]) >= n - mu - len(D):
+        S.append(U.pop(i))
+      elif sum([x.ub < y.lb for y in U]) >= mu - len(S):
+        D.append(U.pop(i))
+  if len(S) < mu:
+    S.extend(sorted(U, reverse=True)[:mu - len(S)])
+  return S, evals
+
+# REPRODUCTION
+
+def epoch(pool, size):
+  offspring = []
+  for i in range(size):
+    mom, dad = random.sample(pool, 2)
+    offspring.append(eonn.reproduce(mom, dad))
+  return offspring
+
+#def reproduce(pool, size, mutate=.6, fraction=.1, sigma=.75, replace=.15):
+#  """ Generate offspring by recombining randomly selected parents from pool. """
+#  offspring = []
+#  for i in range(size):
+#    x, y = random.sample(pool, 2)
+#    org = x.crossover(y)
+#    if random.random() < mutate:
+#      org.mutate(fraction, sigma, replace)
+#    offspring.append(org)
+#  return offspring
+
+# EVOLUTION
+
+def optimize(pool, fselect, feval, maxevals):
+  """ Evolve the population for at most 'maxevals' evaluations. """
+  champion = None
+  while maxevals > 0:
+    parents, evals = fselect(pool, feval)
+    champion = max(parents)
+    maxevals -= evals
+    pool = epoch(parents, len(pool))
+  return pool, champion
+
+
+
+
+
+
+
+
+
+
+def get_feval():
+  fobj = Function(hover, **{'factor' : cfg.factor, 'time' : cfg.time})
+  return fobj.call
+
+def get_fselect():
+  fobj = Function(eval(cfg.fselect), **{'mu' : cfg.mu, 'alpha': cfg.alpha})
+  return fobj.call
+
+
+def hover(policy, factor=0.05, time=2000):
+  """ Helicopter evaluation function. """
+  err = 0
+  # Create heli simulator
+  params = [random.gauss(mu, factor*mu) for mu in XcellTempest.params]
+  std = XcellTempest.std
+  heli = Helicopter(params, std, time)
+  # Evaluate policy
+  while not heli.terminal:
+    state = heli.observation()
+    action = policy.propagate(state, 1)
+    err += heli.update(action)
+  # Return scaled fitness
+  return 1 / math.log(err)
+
+def main():
+#  output = Output()
+  # Initial population
+  proto = Genome.open('/home/koppejan/projects/resampling/baseline.net')
+  pop = Pool.spawn(proto, cfg.popsize)
+  # Evolutionary functions
+  feval = get_feval()
+  fselect = get_fselect()
+  frepr = get_frepr()
+  # Start evolution
+  for i in range(cfg.repeat):
+#    champion, evals = evolve(pop, cfg.maxevals, fselect, feval, frepr)
+    pop, champion = evolve(pop, cfg.maxevals, feval, fselect, frepr)
+    true_fitness = mean([feval(champion.policy) for i in range(50)])
+    print '%i %.3f %.3f' % (evals, champion.fitness, true_fitness)
+#    output.write(stats(population))
+#  output.close()
+
+
+if __name__ == '__main__':
+  try:
+    cfg = Config(sys.argv[1])
+  except:
+    print 'Usage: python resampling.py CONFIG'
+    exit()
+  main()
+
+
+
+#class Evolution:
+#  def __init__(self, pop, feval, fselect, frepr):
+#    self.pop = list(pop)
+#    self.champion = None
+#    self.evals = 0
+#    # Evolutionary functions
+#    self.feval = feval
+#    self.fselect = fselect
+#    self.frepr = frepr
+
+#  def optimize(self, maxevals):
+#    """ Evolve the population for at most 'maxevals' evaluations. """
+#    maxevals += self.evals
+#    while self.evals < maxevals:
+#      self.epoch()
+
+#  def epoch(self):
+#    """ Breed a new generation of organisms."""
+#    parents, evals = self.fselect(self.pop, self.feval)
+#    self.champion = max(parents)
+#    self.evals += evals
+#    self.pop = self.frepr(parents)
+
