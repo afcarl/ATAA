@@ -4,7 +4,7 @@ import random
 import math
 from string import letters, digits
 
-sys.path.append('/home/koppejan/projects/helicopter')
+sys.path.append('/Users/imperal/ataa/helicopter/site-packages')
 
 import functions
 from helicopter.helicopter import Helicopter
@@ -14,7 +14,7 @@ from eonn.genome import Genome
 from eonn.organism import Organism
 from eonn.organism import spawn
 
-PREFIX = '/home/koppejan/projects/helicopter/ghh10/policies/race/'
+PREFIX = '/Users/imperal/ataa/helicopter/ghh10/policies/race/'
 POLICIES = glob.glob(PREFIX + 'policy*.net')
 
 SAFE_LIMITS = tuple([5.0] * 3 + [20.0] * 3 + [4 * math.pi] * 3 + [1.0] * 3)

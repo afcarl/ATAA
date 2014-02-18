@@ -1,7 +1,7 @@
 import sys
 import math
 
-sys.path.append('/home/koppejan/projects/site-packages')
+sys.path.append('/Users/imperal/ataa/helicopter/site-packages')
 
 from eonn import eonn
 from eonn.genome import Genome

@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/koppejan/projects/site-packages/')
+sys.path.append('/Users/imperal/ataa/helicopter/site-packages/')
 
 import math
 import random
@@ -12,7 +12,7 @@ from numpy import *
 import random
 from string import letters, digits
 
-PROTOTYPE = '/home/koppejan/projects/helicopter/ghh10/baseline.net'
+PROTOTYPE = '/Users/imperal/ataa/helicopter/ghh10/policies/baseline.net'
 
 def hover(policy):
   """ Helicopter evaluation function. """
@@ -103,6 +103,7 @@ def main():
   pool = organism.spawn(Genome.open(PROTOTYPE), 30)
   for i in range(25):
     pool, champion = optimize(pool, race_resampling, hover, 20000)
+    print champion.fitness
     output.write('%i %.3f\n' % ((i+1) * 20000, champion.fitness))
     output.flush()
   output.close()
