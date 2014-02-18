@@ -11,10 +11,6 @@ import random as rand
 from string import letters, digits
 import os
 
-from mpltools import style
-
-style.use('ggplot')
-
 # State limits
 XMIN =	0
 XMAX =	1
@@ -26,6 +22,10 @@ YGOAL = 0.15
 GOALRADIUS = 0.03
 
 WINDCHANCE = 0.01
+
+EPOCHS = 10
+EVALS = 5
+ROUNDS = 50
 
 def wind():
 	return rand.random() < WINDCHANCE
@@ -55,7 +55,7 @@ def draw(l):
 def cliff(policy, max_steps=500, verbose = False):
 	""" Cliff evaluation function. """
 	ret = 0
-	pos = np.random.random_sample(2)
+	pos = np.random.rand(1,2)[0]
 	l = [pos]
 	for i in range(max_steps):
 		action = policy.propagate(list(pos),t=1)
@@ -76,7 +76,7 @@ def cliff(policy, max_steps=500, verbose = False):
 
 def main():
 	""" Main function. """
-	pool = Pool.spawn(Genome.open('cliff.net'), 20, std=0.8)
+	pool = Pool.spawn(Genome.open('cliff.net'), 20, std=1)
 	
 	# Set evolutionary parameters
 	eonn.samplesize	 = 5			# Sample size used for tournament selection
@@ -87,18 +87,18 @@ def main():
 	eonn.mutate_repl = 0.25		# Probability that a gene gets replaced
 	
 	
-	directory = "pics"+''.join(rand.sample(letters+digits, 5))
+	directory = "pics/"+''.join(rand.sample(letters+digits, 5))
 	os.makedirs(directory)
 	# Evolve population
-	for j in xrange(1,51):
-		pool = eonn.optimize(pool, cliff, epochs=5, evals = 5)
-		print "AFTER EPOCH", j*5
+	for j in xrange(1,ROUNDS+1):
+		pool = eonn.optimize(pool, cliff, epochs=EPOCHS, evals = EVALS)
+		print "AFTER EPOCH", j*EPOCHS
 		print "average fitness %.1f" % pool.fitness
 		champion = max(pool)
 		print "champion fitness %.1f" % champion.fitness
 		for i in xrange(10):
 			cliff(champion.policy,verbose = True)
-		plt.savefig(directory+"/"+str(j*5)+".png")
+		plt.savefig(directory+"/"+str(j*EPOCHS)+".png")
 		plt.clf()
 	with open(directory+'/best.net', 'w') as f:
 		f.write('%s' % champion.genome)
