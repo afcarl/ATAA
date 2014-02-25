@@ -67,12 +67,6 @@ class Organism(object):
 		org.evals = list(self.evals)
 		return org
 
-	def equals(self,values):
-		for i,gene in enumerate(self.genome):
-			if not gene.dna[-1] == values[i]:
-				return False
-		return True
-
 	@property
 	def fitness(self):
 		""" Average return. """
@@ -95,10 +89,10 @@ class Pool(list):
 				X[n][i] = gene.dna[-1]
 		
 	def find(self,values):
-		for org in self:
+		for org in enumerate(self):
 			if org.equals(values):
-				return org
-		return None
+				return true
+		return False
 			
 			
 	@property

@@ -21,9 +21,10 @@ Main module, implementing a complete generational evolutionary algorithm.
 
 import random
 from organism import *
-
-import matplotlib.pyplot as plt
-
+import numpy as np
+from sklearn.gaussian_process import *
+import random
+from pprint import *
 
 samplesize	= 5			# Sample size used for tournament selection
 keep				= 0			# Nr. of organisms copied to the next generation (elitism)
@@ -33,31 +34,71 @@ mutate_std	= 1.0		# Std. dev. of mutation distribution (gaussian)
 mutate_repl = 0.25	# Probability that a gene gets replaced
 
 
-def optimize(pool, feval, epochs=100, evals=1, verbose=False):
+def optimize(pool, feval, epochs=100, verbose=False):
 	""" Evolve supplied population using feval as fitness function.
 
 	Keyword arguments:
 	pool	 -- population to optimize
 	feval	 -- fitness function
-	epochs -- duration of evoluationary run
-	evals	 -- samples per individual
+	epochs -- duration of evolutionary run
 
 	"""
-	evaluate(pool, feval, evals)
-	# Iteratively reproduce and evaluate
-	for i in range(epochs):
-		pool = epoch(pool, len(pool))
-		evaluate(pool, feval, evals)
-		if verbose:
-			print i+1, '%s %s' % (max(pool), pool.fitness)
-	# Return pool
-	return pool
+	
+	# Matrx X used in Gaussian Fit
+	X = np.empty([len(pool),len(pool[0].genome)+2])
+	for n,org in enumerate(pool):
+		for i,gene in enumerate(org.genome):
+			X[n][i] = gene.dna[-1]
+	y = np.empty(len(pool))
 
-def evaluate(pool, feval, evals=1):
-	""" Evaluate each individual in the population. """
-	for org in pool:
-		for i in xrange(evals):
-			org.evals.append(feval(org.policy))
+	# Create returns in combination with z for original data
+	for i,org in enumerate(pool):
+		z = np.random.uniform(0,1,2)
+		reward = feval(org.policy,list(z))
+		org.evals.append(reward)
+		y[i] = reward
+		X[i][-2] = z[0]
+		X[i][-1] = z[1]
+	
+	# do GP fit and a evaluation
+	for i in xrange(epochs):
+		
+		pool = epoch(pool, 4 * len(pool))
+		
+		gp = GaussianProcess()
+		gp.fit(X,y)
+		
+		zPool = np.linspace(0,1,10)
+		
+		x = []
+		for z1 in zPool:
+			for z2 in zPool:
+				for org in pool:
+					g = [0]*len(pool[0].genome)
+					for i,gene in enumerate(org.genome):
+						g[i] = gene.dna[-1]
+					g.append(z1)
+					g.append(z2)
+					x.append(g)
+		x = np.array(x)
+		yPred, MSE = gp.predict(x, eval_MSE=True)
+		UCB = yPred + 1.96 * np.sqrt(MSE)
+		sortedUCB = np.argsort(UCB)
+		bestPiZ = x[sortedUCB][-5:]
+		orgList = []
+		
+		for piZ in bestPiZ:
+			pi = piZ[:-2]
+			org = pool.find(pi)
+			orgList.append(org)
+			z = piZ[-2:]
+			reward = feval(org.policy,list(z))
+			org.evals.append(reward)
+			np.append(X,piZ)
+			np.append(y,reward)
+		pool = Pool(orgList)
+	print bestPiZ[:,-2:]
+	return pool
 			
 def epoch(pool, size):
 	""" Breed a new generation of organisms."""

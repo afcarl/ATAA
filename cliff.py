@@ -2,47 +2,45 @@ import sys
 from eonn import eonn
 from eonn.genome import Genome
 from eonn.organism import Pool
-from math import cos, log
+from math import cos, log, sqrt
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib import cm as cm
 import random as rand
 
 from string import letters, digits
 import os
 
-# State limits
-XMIN =	0
-XMAX =	1
-YMIN =	0
-YMAX =	1
+from mpltools import style
+style.use('ggplot')
 
-XGOAL = 0.85
-YGOAL = 0.15
+# State limits
+LEFT = 0
+RIGHT = 1
+
+GOAL = np.array([0.85,0.15])
 GOALRADIUS = 0.03
 
 WINDCHANCE = 0.01
+WINDSTRENGTH = [0,-0.2]
 
-EPOCHS = 10
-EVALS = 5
-ROUNDS = 50
+EPOCHS = 100
+ROUNDS = 10
 
 def wind():
 	return rand.random() < WINDCHANCE
 
 def update(pos, action):
-	""" Updates position and velocity with given action. """
-	if(wind()):
-		pos += np.array([0,0.1])
-	return pos + (action * 0.2) 
+	""" Updates position with given action. """
+	if wind():
+		pos += np.array(WINDSTRENGTH)
+	return pos + (action * 0.05) 
 
 def checkBounds(pos):
-	return pos[0] < XMAX and pos[0] > XMIN and pos[1] < YMAX and pos[1] > YMIN
+	return (pos < RIGHT).all() and (pos > LEFT).all()
 	
 def checkGoal(pos):
-	x = pos[0] < XGOAL + GOALRADIUS and pos[0] > XGOAL - GOALRADIUS
-	y = pos[1] < YGOAL + GOALRADIUS and pos[1] > YGOAL - GOALRADIUS
-	return x and y
+	dist = np.linalg.norm(pos-GOAL).sum()
+	return dist < GOALRADIUS
 
 def draw(l):
 	x = [s[0] for s in l]
@@ -52,31 +50,32 @@ def draw(l):
 	plt.ylim([0,1])
 	
 
-def cliff(policy, max_steps=500, verbose = False):
+def cliff(policy, z = None, max_steps=500, verbose = False):
 	""" Cliff evaluation function. """
-	ret = 0
-	pos = np.random.rand(1,2)[0]
+	if not z:
+		z = np.random.uniform(0,1,2)
+	pos = z
 	l = [pos]
 	for i in range(max_steps):
 		action = policy.propagate(list(pos),t=1)
 		pos = update(pos, np.array(action))
-		ret -= 0
 		if verbose:
 			l.append(list(pos))
 		if checkGoal(pos):
-			ret += 1000
+			ret = 0.9 ** i * 1000
 			break
 		if not checkBounds(pos):
-			ret -= 1000
+			ret = -1000
 			break;
+		ret = i
 	if verbose:
 		draw(l)
-	return ret
+	return np.random.uniform(0,1000)
 
 
 def main():
 	""" Main function. """
-	pool = Pool.spawn(Genome.open('cliff.net'), 20, std=1)
+	pool = Pool.spawn(Genome.open('cliff.net'), 5, std=1)
 	
 	# Set evolutionary parameters
 	eonn.samplesize	 = 5			# Sample size used for tournament selection
@@ -87,23 +86,8 @@ def main():
 	eonn.mutate_repl = 0.25		# Probability that a gene gets replaced
 	
 	
-	directory = "pics/"+''.join(rand.sample(letters+digits, 5))
-	os.makedirs(directory)
 	# Evolve population
-	for j in xrange(1,ROUNDS+1):
-		pool = eonn.optimize(pool, cliff, epochs=EPOCHS, evals = EVALS)
-		print "AFTER EPOCH", j*EPOCHS
-		print "average fitness %.1f" % pool.fitness
-		champion = max(pool)
-		print "champion fitness %.1f" % champion.fitness
-		for i in xrange(10):
-			cliff(champion.policy,verbose = True)
-		plt.savefig(directory+"/"+str(j*EPOCHS)+".png")
-		plt.clf()
-	with open(directory+'/best.net', 'w') as f:
-		f.write('%s' % champion.genome)
-	print "Done, everything saved in ", directory
-	
+	pool = eonn.optimize(pool,cliff, epochs = EPOCHS)
 
 
 if __name__ == '__main__':
