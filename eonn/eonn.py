@@ -44,7 +44,7 @@ def optimize(pool, feval, epochs=100, verbose=False):
 
 	"""
 	
-	# Matrx X used in Gaussian Fit
+	# Matrx X used in Gaussian Fit: sizePool x nrVars+2 (for Z)
 	X = np.empty([len(pool),len(pool[0].genome)+2])
 	for n,org in enumerate(pool):
 		for i,gene in enumerate(org.genome):
@@ -62,14 +62,14 @@ def optimize(pool, feval, epochs=100, verbose=False):
 	
 	# do GP fit and a evaluation
 	for i in xrange(epochs):
-		
+		# pool pi used for exploring landscape
 		pool = epoch(pool, 4 * len(pool))
-		
+		# the gp fit
 		gp = GaussianProcess()
 		gp.fit(X,y)
-		
+		# pool z used for exploring landscape
 		zPool = np.linspace(0,1,10)
-		
+		# create pi z pairs (from pool) to investigate landscape
 		x = []
 		for z1 in zPool:
 			for z2 in zPool:
@@ -81,18 +81,18 @@ def optimize(pool, feval, epochs=100, verbose=False):
 					g.append(z2)
 					x.append(g)
 		x = np.array(x)
-		yPred, MSE = gp.predict(x, eval_MSE=True)
-		UCB = yPred + 1.96 * np.sqrt(MSE)
-		sortedUCB = np.argsort(UCB)
+		yPred, MSE = gp.predict(x, eval_MSE=True) # actual landscape
+		UCB = yPred + 1.96 * np.sqrt(MSE) # implement here for smarter search through landscape
+		sortedUCB = np.argsort(UCB) # dito above
 		bestPiZ = x[sortedUCB][-5:]
 		orgList = []
-		
+		# extract good pi and z from search
 		for piZ in bestPiZ:
 			pi = piZ[:-2]
 			org = pool.find(pi)
 			orgList.append(org)
 			z = piZ[-2:]
-			reward = feval(org.policy,list(z))
+			reward = feval(org.policy,list(z)) # elite pi z pair is evaluated
 			org.evals.append(reward)
 			np.append(X,piZ)
 			np.append(y,reward)
