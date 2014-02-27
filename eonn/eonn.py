@@ -60,44 +60,53 @@ def optimize(pool, feval, epochs=100, verbose=False):
 		X[i][-2] = z[0]
 		X[i][-1] = z[1]
 	
-	# do GP fit and a evaluation
+	# do GP fit and a evaluation for each epoch
 	for i in xrange(epochs):
 		# pool pi used for exploring landscape
 		pool = epoch(pool, 4 * len(pool))
 		# the gp fit
 		gp = GaussianProcess()
 		gp.fit(X,y)
-		# pool z used for exploring landscape
+
+		# pool z used for exploring landscape (grid)
 		zPool = np.linspace(0,1,10)
+
 		# create pi z pairs (from pool) to investigate landscape
 		x = []
 		for org in pool:
 			for z1 in zPool:
 				for z2 in zPool:
-					g = [0]*len(pool[0].genome)
-					for i,gene in enumerate(org.genome):
-						g[i] = gene.dna[-1]
+					g = getWeights(org)
 					g.append(z1)
 					g.append(z2)
 					x.append(g)
+
+		# evaluate gridsearch
 		x = np.array(x)
 		yPred, MSE = gp.predict(x, eval_MSE=True) # actual landscape
+
 		UCB = yPred + 1.96 * np.sqrt(MSE) # implement here for smarter search through landscape
+
+		# select interesting pi-z pairs
 		sortedUCB = np.argsort(UCB) # dito above
-		bestPiZ = x[sortedUCB][-5:]
-		#bestPiZ = acquisiteFunction(pool, zPool, UCB);
+		#bestPiZ = x[sortedUCB][-5:]
+		bestPiZ = acquisiteFunction(pool, zPool, UCB);
+
+		# holds the pi evaluated in this epoch and will be used in the next epoch
 		orgList = []
-		# extract good pi and z from search
+
+		# evaluate selecte pi-z pairs
 		for piZ in bestPiZ:
 			pi = piZ[:-2]
 			org = pool.find(pi)
 			orgList.append(org)
 			
+			# if already evaluated, skip???
 			if piZ.tolist() in X.tolist():
 				continue
 			
 			z = piZ[-2:]
-			reward = feval(org.policy,list(z)) # elite pi z pair is evaluated
+			reward = feval(org.policy,list(z)) # pi-z pair is evaluated
 			org.evals.append(reward)
 			piZ = np.atleast_2d(piZ)
 			X = np.append(X,piZ,axis = 0)
@@ -127,8 +136,8 @@ def select(pool):
 
 def acquisiteFunction(pool, zPool, UCB):
 	""" 
-		Returns the most interesting piZ pairs 
-		As this function almost purely focusses on 
+		Returns best pi's on the single most interesting
+		z. As this function purely focusses on 
 		high variation, it is expected to focus on
 		keeping alive in annoying situation,
 		thus don't expet too much!
@@ -136,34 +145,38 @@ def acquisiteFunction(pool, zPool, UCB):
 	
 	zAmount = np.power(len(zPool), 2)
 	pAmount = len(pool)
-	
+
 	# holds the (co)variance of each z 
 	vars = np.zeros(zAmount);
 	
-	# fill vars, where each var has pAmount amount of values
+	# fill vars, where each var has variance of pAmount amount of values
 	for i in range(0,zAmount):
-		vars[i] = np.var( UCB[ range( (i * pAmount), (i * pAmount) + pAmount   ) ])
+		vars[i] = np.var( UCB[ range( (i * pAmount), (i * pAmount) + pAmount ) ])
 	
 	# z with highest variance in ucb, where the z is as follows:
 	# first element is highest index / len(zPool)
 	# second element is highest index mod len(zPool)
-	varZ = np.argmax(vars) / len(zPool), np.mod( np.argmax(vars), len(zPool))
+	varZ = [np.argmax(vars) / len(zPool), np.mod( np.argmax(vars), len(zPool))]
 
-	# get 5 best pi on that z
-	bestPi = np.argsort(UCB[ range( np.argmax(vars) * pAmount, (np.argmax(vars) + 1) * pAmount ) ])[-5:]
+	# get 5 best pi (index) on that z
+	iBestPi = np.argsort(UCB[ range( np.argmax(vars) * pAmount, (np.argmax(vars) + 1) * pAmount ) ])[-5:]
 	
 	# create 5 best piz from these findings
 	bestPiZ = []
-	#for pi in bestPi:
-		# append them TODO
-	
-	print "We still have to append the arrays such that bestPiZ is created"
-		
-	# remove if ^ fixed
-	exit()
+	for iPi in iBestPi:
+		w = getWeights(pool[iPi])
+		w.extend(varZ)
+		bestPiZ.append(w)
 
-	# debugging
-	print varZ
-	print bestPi
-	print bestPiZ
+
+	# return as np array
+	return np.array(bestPiZ)
+
+def getWeights(organisme):
+	""" Returns the weights of an organism """
+	w = [0]*len(organisme.genome)
+	for i,gene in enumerate(organisme.genome):
+		w[i] = gene.dna[-1]
+
+	return w
 
