@@ -71,9 +71,9 @@ def optimize(pool, feval, epochs=100, verbose=False):
 		zPool = np.linspace(0,1,10)
 		# create pi z pairs (from pool) to investigate landscape
 		x = []
-		for z1 in zPool:
-			for z2 in zPool:
-				for org in pool:
+		for org in pool:
+			for z1 in zPool:
+				for z2 in zPool:
 					g = [0]*len(pool[0].genome)
 					for i,gene in enumerate(org.genome):
 						g[i] = gene.dna[-1]
@@ -85,6 +85,7 @@ def optimize(pool, feval, epochs=100, verbose=False):
 		UCB = yPred + 1.96 * np.sqrt(MSE) # implement here for smarter search through landscape
 		sortedUCB = np.argsort(UCB) # dito above
 		bestPiZ = x[sortedUCB][-5:]
+		#bestPiZ = acquisiteFunction(pool, zPool, UCB);
 		orgList = []
 		# extract good pi and z from search
 		for piZ in bestPiZ:
@@ -119,3 +120,46 @@ def reproduce(mom, dad):
 def select(pool):
 	""" Select one individual using tournament selection. """
 	return max(random.sample(pool, samplesize))
+
+def acquisiteFunction(pool, zPool, UCB):
+	""" 
+		Returns the most interesting piZ pairs 
+		As this function almost purely focusses on 
+		high variation, it is expected to focus on
+		keeping alive in annoying situation,
+		thus don't expet too much!
+	"""
+	
+	zAmount = np.power(len(zPool), 2)
+	pAmount = len(pool)
+	
+	# holds the (co)variance of each z 
+	vars = np.zeros(zAmount);
+	
+	# fill vars, where each var has pAmount amount of values
+	for i in range(0,zAmount):
+		vars[i] = np.var( UCB[ range( (i * pAmount), (i * pAmount) + pAmount   ) ])
+	
+	# z with highest variance in ucb, where the z is as follows:
+	# first element is highest index / len(zPool)
+	# second element is highest index mod len(zPool)
+	varZ = np.argmax(vars) / len(zPool), np.mod( np.argmax(vars), len(zPool))
+
+	# get 5 best pi on that z
+	bestPi = np.argsort(UCB[ range( np.argmax(vars) * pAmount, (np.argmax(vars) + 1) * pAmount ) ])[-5:]
+	
+	# create 5 best piz from these findings
+	bestPiZ = []
+	#for pi in bestPi:
+		# append them TODO
+	
+	print "We still have to append the arrays such that bestPiZ is created"
+		
+	# remove if ^ fixed
+	exit()
+
+	# debugging
+	print varZ
+	print bestPi
+	print bestPiZ
+
