@@ -23,8 +23,7 @@ GOALRADIUS = 0.03
 WINDCHANCE = 0.01
 WINDSTRENGTH = [0,-0.2]
 
-EPOCHS = 100
-ROUNDS = 10
+EPOCHS = 1000	
 
 def wind():
 	return rand.random() < WINDCHANCE
@@ -56,6 +55,7 @@ def cliff(policy, z = None, max_steps=500, verbose = False):
 		z = np.random.uniform(0,1,2)
 	pos = z
 	l = [pos]
+	ret = 0
 	for i in range(max_steps):
 		action = policy.propagate(list(pos),t=1)
 		pos = update(pos, np.array(action))
@@ -67,10 +67,10 @@ def cliff(policy, z = None, max_steps=500, verbose = False):
 		if not checkBounds(pos):
 			ret = -1000
 			break;
-		ret = i
+		ret += 1
 	if verbose:
 		draw(l)
-	return np.random.uniform(0,1000)
+	return ret
 
 
 def main():
@@ -87,9 +87,14 @@ def main():
 	
 	
 	# Evolve population
-	pool = eonn.optimize(pool,cliff, epochs = EPOCHS)
-
+	pool = eonn.optimize(pool,cliff, epochs = 100)
+	champion = max(pool)
+	ret = 0
+	for i in range(10):
+		ret += cliff(champion.policy,verbose = True)
+	print ret / 10
+	plt.show()
+	
 
 if __name__ == '__main__':
 	main()
-

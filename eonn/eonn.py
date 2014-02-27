@@ -62,7 +62,7 @@ def optimize(pool, feval, epochs=100, verbose=False):
 	
 	# do GP fit and a evaluation
 	for i in xrange(epochs):
-		
+		print i+1 ,"of", epochs
 		pool = epoch(pool, 4 * len(pool))
 		
 		gp = GaussianProcess()
@@ -81,6 +81,7 @@ def optimize(pool, feval, epochs=100, verbose=False):
 					g.append(z2)
 					x.append(g)
 		x = np.array(x)
+		print x.shape
 		yPred, MSE = gp.predict(x, eval_MSE=True)
 		UCB = yPred + 1.96 * np.sqrt(MSE)
 		sortedUCB = np.argsort(UCB)
@@ -91,13 +92,17 @@ def optimize(pool, feval, epochs=100, verbose=False):
 			pi = piZ[:-2]
 			org = pool.find(pi)
 			orgList.append(org)
+			
+			if piZ.tolist() in X.tolist():
+				continue
+			
 			z = piZ[-2:]
 			reward = feval(org.policy,list(z))
 			org.evals.append(reward)
-			np.append(X,piZ)
-			np.append(y,reward)
+			piZ = np.atleast_2d(piZ)
+			X = np.append(X,piZ,axis = 0)
+			y = np.append(y,reward)
 		pool = Pool(orgList)
-	print bestPiZ[:,-2:]
 	return pool
 			
 def epoch(pool, size):
