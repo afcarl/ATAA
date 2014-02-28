@@ -136,38 +136,52 @@ def select(pool):
 
 def acquisiteFunction(pool, zPool, UCB):
 	""" 
-		Returns best pi's on the single most interesting
-		z. As this function purely focusses on 
-		high variation, it is expected to focus on
-		keeping alive in annoying situation,
-		thus don't expet too much!
+	Returns best pi's on the single most interesting
+	z. As this function purely focusses on 
+	high variation, it is expected to focus on
+	keeping alive in annoying situation,
+	thus don't expet too much!
+
+	Assumes: a particular ordering in UCB:
+
+	for org in pool
+		for z1 in zpool
+			for z2 in zpool
+
+	It uses this ordering to reshape the UCB
+	and extract variance per z.
+
+	Assumes: UCB is formed by testing out all
+	possible pi in policy and z combinations in z
+	as indicate above
 	"""
-	
-	zAmount = np.power(len(zPool), 2)
+
+	zAmount = len(zPool)
 	pAmount = len(pool)
 
-	# holds the (co)variance of each z 
-	vars = np.zeros(zAmount);
-	
-	# fill vars, where each var has variance of pAmount amount of values
-	for i in range(0,zAmount):
-		vars[i] = np.var( UCB[ range( (i * pAmount), (i * pAmount) + pAmount ) ])
-	
-	# z with highest variance in ucb, where the z is as follows:
-	# first element is highest index / len(zPool)
-	# second element is highest index mod len(zPool)
-	varZ = [np.argmax(vars) / len(zPool), np.mod( np.argmax(vars), len(zPool))]
+	# UCBGrid[1][2][3] = UCB of policy 1 on 
+	# [zpool[2], zpool[3]
+	UCBGrid = np.reshape(UCB, (pAmount, zAmount, zAmount))
 
-	# get 5 best pi (index) on that z
-	iBestPi = np.argsort(UCB[ range( np.argmax(vars) * pAmount, (np.argmax(vars) + 1) * pAmount ) ])[-5:]
-	
-	# create 5 best piz from these findings
+	# stores variance of UCB of policies on each [z1,z2]
+	vars = np.zeros((zAmount, zAmount))
+
+	for (i, j), _ in np.ndenumerate(vars):
+		vars[i][j] = np.var( UCBGrid[:][i][j] );
+
+	# return the indices of z with highest variance , argmax provides raveled (flattened)
+	varZ = np.unravel_index( np.argmax(vars), vars.shape)
+
+	# sort the policy UCB on that z and return top 5 policies
+	bestPi = pool( np.argsort( UCBGrid[:][varZ[0]][varZ[1]] )[-5:] )
+
+	# append z to policies in order to return a list of [piWeights, z1,z2]
 	bestPiZ = []
-	for iPi in iBestPi:
-		w = getWeights(pool[iPi])
+	for pi in BestPi:
+		w = getWeights(pi)
 		w.extend(varZ)
 		bestPiZ.append(w)
-
+	
 
 	# return as np array
 	return np.array(bestPiZ)
