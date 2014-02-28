@@ -62,6 +62,7 @@ def optimize(pool, feval, epochs=100, verbose=False):
 	
 	# do GP fit and a evaluation for each epoch
 	for i in xrange(epochs):
+
 		# pool pi used for exploring landscape
 		pool = epoch(pool, 4 * len(pool))
 		# the gp fit
@@ -172,13 +173,13 @@ def acquisiteFunction(pool, zPool, UCB):
 	# return the indices of z with highest variance , argmax provides raveled (flattened)
 	varZ = np.unravel_index( np.argmax(vars), vars.shape)
 
-	# sort the policy UCB on that z and return top 5 policies
-	bestPi = pool( np.argsort( UCBGrid[:][varZ[0]][varZ[1]] )[-5:] )
+	# sort the policy UCB on that z and return index of top 5 policies
+	iBestPi = np.argsort( UCBGrid[:][varZ[0]][varZ[1]] )[-5:] 
 
-	# append z to policies in order to return a list of [piWeights, z1,z2]
+	# get weights of each policy and append the z to it
 	bestPiZ = []
-	for pi in BestPi:
-		w = getWeights(pi)
+	for iPi in iBestPi:
+		w = getWeights(pool[iPi])
 		w.extend(varZ)
 		bestPiZ.append(w)
 	
