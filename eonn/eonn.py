@@ -22,6 +22,49 @@ Main module, implementing a complete generational evolutionary algorithm.
 import random
 from organism import *
 
+import numpy as np
+from sklearn.gaussian_process import *
+import random
+from pprint import *
+
+samplesize	= 5			# Sample size used for tournament selection
+keep				= 0			# Nr. of organisms copied to the next generation (elitism)
+mutate_prob = 0.75	# Probability that offspring is being mutated
+mutate_frac = 0.2		# Fraction of genes that get mutated
+mutate_std	= 1.0		# Std. dev. of mutation distribution (gaussian)
+mutate_repl = 0.25	# Probability that a gene gets replaced
+
+
+def optimize(pool, feval, epochs=100, verbose=False):
+	""" Evolve supplied population using feval as fitness function.
+
+	Keyword arguments:
+	pool	 -- population to optimize
+	feval	 -- fitness function
+	epochs -- duration of evolutionary run
+
+	"""
+	
+	# Matrx X used in Gaussian Fit: sizePool x nrVars+2 (for Z)
+	X = np.empty([len(pool),len(pool[0].genome)+2])
+	for n,org in enumerate(pool):
+		for i,gene in enumerate(org.genome):
+			X[n][i] = gene.dna[-1]
+	y = np.empty(len(pool))
+
+	# Create returns in combination with z for original data
+	for i,org in enumerate(pool):
+		z = np.random.uniform(0,1,2)
+		reward = feval(org.policy,list(z))
+		org.evals.append(reward)
+		y[i] = reward
+		X[i][-2] = z[0]
+		X[i][-1] = z[1]
+	
+	# do GP fit and a evaluation for each epoch
+	for i in xrange(epochs):
+		print "epoch " + str(i)
+
 
 samplesize  = 5     # Sample size used for tournament selection
 keep        = 0     # Nr. of organisms copied to the next generation (elitism)
