@@ -27,7 +27,7 @@ import random
 from pprint import *
 
 samplesize	= 5			# Sample size used for tournament selection
-keep				= 0			# Nr. of organisms copied to the next generation (elitism)
+keep		= 0			# Nr. of organisms copied to the next generation (elitism)
 mutate_prob = 0.75	# Probability that offspring is being mutated
 mutate_frac = 0.2		# Fraction of genes that get mutated
 mutate_std	= 1.0		# Std. dev. of mutation distribution (gaussian)
@@ -62,6 +62,7 @@ def optimize(pool, feval, epochs=100, verbose=False):
 	
 	# do GP fit and a evaluation for each epoch
 	for i in xrange(epochs):
+		print i
 
 		# pool pi used for exploring landscape
 		pool = epoch(pool, 4 * len(pool))
@@ -91,7 +92,8 @@ def optimize(pool, feval, epochs=100, verbose=False):
 		# select interesting pi-z pairs
 		sortedUCB = np.argsort(UCB) # dito above
 		#bestPiZ = x[sortedUCB][-5:]
-		bestPiZ = acquisiteFunction(pool, zPool, UCB);
+		#bestPiZ = acquisitionFunction(pool, zPool, UCB);
+		bestPiZ = acquisitionFunction_2(pool, zPool, UCB, yPred, x)
 
 		# holds the pi evaluated in this epoch and will be used in the next epoch
 		orgList = []
@@ -135,7 +137,7 @@ def select(pool):
 	""" Select one individual using tournament selection. """
 	return max(random.sample(pool, samplesize))
 
-def acquisiteFunction(pool, zPool, UCB):
+def acquisitionFunction(pool, zPool, UCB):
 	""" 
 	Returns best pi's on the single most interesting
 	z. As this function purely focusses on 
@@ -160,8 +162,7 @@ def acquisiteFunction(pool, zPool, UCB):
 	zAmount = len(zPool)
 	pAmount = len(pool)
 
-	# UCBGrid[1][2][3] = UCB of policy 1 on 
-	# [zpool[2], zpool[3]
+	
 	UCBGrid = np.reshape(UCB, (pAmount, zAmount, zAmount))
 
 	# stores variance of UCB of policies on each [z1,z2]
@@ -185,6 +186,44 @@ def acquisiteFunction(pool, zPool, UCB):
 	
 
 	# return as np array
+	return np.array(bestPiZ)
+
+def acquisitionFunction_2(pool, zPool, UCB, means, GP):
+	""" 
+	Returns best 5 policies with UCB, and adds z with highest variances over these policies. 
+
+	Assumes: a particular ordering in UCBfor reshape:
+
+	for org in pool
+		for z1 in zpool
+			for z2 in zpool
+	"""
+
+	zAmount = len(zPool)
+	pAmount = len(pool)
+
+	# UCBGrid[1][2][3] = UCB of policy 1 on 
+	# [zpool[2], zpool[3]
+	UCBGrid = np.reshape(UCB, (pAmount, zAmount, zAmount))
+	sortedUCB = np.argsort(UCB) # highest UCB for selecting policies (NB can still be multiple same policies)
+	bestPi = GP[sortedUCB][-5:]
+
+	vars = np.zeros((zAmount, zAmount))
+	meansGrid = np.reshape(means, (pAmount, zAmount, zAmount))
+
+	policyIndex = np.unique(sortedUCB[-5:]//(zAmount**2)).tolist()
+
+	#calculate variance over selected polocies for each z
+	for (i, j), _ in np.ndenumerate(vars):
+		vars[i][j] = np.var(meansGrid[[1,2],i,j]);
+	# select Z with highest variance
+	bestZ = np.unravel_index( np.argmax(vars), vars.shape)	
+
+	# create Pi/Z combinations
+	bestPiZ = []
+	for pi in bestPi:
+		pi.tolist().extend(bestZ)
+		bestPiZ.append(pi)
 	return np.array(bestPiZ)
 
 def getWeights(organisme):

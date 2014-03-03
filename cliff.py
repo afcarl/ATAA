@@ -10,8 +10,8 @@ import random as rand
 from string import letters, digits
 import os
 
-from mpltools import style
-style.use('ggplot')
+#from mpltools import style
+#style.use('ggplot')
 
 # State limits
 LEFT = 0
@@ -23,7 +23,7 @@ GOALRADIUS = 0.03
 WINDCHANCE = 0.01
 WINDSTRENGTH = [0,-0.2]
 
-EPOCHS = 1000	
+EPOCHS = 100
 
 def wind():
 	return rand.random() < WINDCHANCE
@@ -78,8 +78,8 @@ def main():
 	pool = Pool.spawn(Genome.open('cliff.net'), 5, std=1)
 	
 	# Set evolutionary parameters
-	eonn.samplesize	 = 5			# Sample size used for tournament selection
-	eonn.keep				 = 5			# Nr. of organisms copied to the next generation (elitism)
+	eonn.samplesize	 = 5		# Sample size used for tournament selection
+	eonn.keep		 = 5		# Nr. of organisms copied to the next generation (elitism)
 	eonn.mutate_prob = 0.75		# Probability that offspring is being mutated
 	eonn.mutate_frac = 0.2		# Fraction of genes that get mutated
 	eonn.mutate_std	 = 0.1		# Std. dev. of mutation distribution (gaussian)
@@ -87,7 +87,7 @@ def main():
 	
 	
 	# Evolve population
-	pool = eonn.optimize(pool,cliff, epochs = 100)
+	pool = eonn.optimize(pool,cliff, EPOCHS)
 	champion = max(pool)
 	ret = 0
 	for i in range(10):
