@@ -38,28 +38,25 @@ def spawn(genome, size, frac=0.5, std=0.5):
 		org.mutate(frac, std)
 	return pool
 
-
 class Organism(object):
 	""" Wrapper class that provides fitness metrics. """
 	def __init__(self, genome):
-		self.genome = Genome(genome)
-		self.policy = Network(self.genome)
+		self.genome = genome.copy()
 		self.evals = list()
 
 	def __cmp__(self, other):
 		return cmp(self.fitness, other.fitness)
 
 	def __str__(self):
-		return '%.3f' % self.fitness
+		return str(self.genome)
 
 	def crossover(self, other):
 		""" Return a new organism by recombining the parents. """
 		return Organism(self.genome.crossover(other.genome))
 
-	def mutate(self, frac=0.1, std=1.0, repl=0.25):
+	def mutate(self, frac=0.1, std=1.0):
 		""" Mutate the organism by mutating its genome. """
-		self.genome.mutate(frac, std, repl)
-		self.policy = Network(self.genome)
+		self.genome.mutate(frac, std)
 
 	def copy(self):
 		""" Return a deep copy of this organism. """
@@ -69,10 +66,10 @@ class Organism(object):
 
 	def equals(self,values):
 		for i,gene in enumerate(self.genome):
-			if not gene.dna[-1] == values[i]:
+			if not gene.equals(values[i]):
 				return False
 		return True
-
+	
 	@property
 	def fitness(self):
 		""" Average return. """
@@ -80,6 +77,12 @@ class Organism(object):
 			return sum(self.evals, 0.) / len(self.evals)
 		except ZeroDivisionError:
 			return 0.
+	
+	@property
+	def weights(self):
+		""" Returns the weights of an organism """
+		return self.genome.weights
+		
 
 
 class Pool(list):
@@ -87,19 +90,11 @@ class Pool(list):
 	def __init__(self, organisms):
 		super(Pool, self).__init__([org.copy() for org in organisms])
 		
-	def genomes(self):
-		""" Genomes of the population in matrix form"""
-		X = np.empty([len(self),len(self[0].genome)])
-		for n,org in enumerate(self):
-			for i,gene in enumerate(org.genome):
-				X[n][i] = gene.dna[-1]
-		
 	def find(self,values):
 		for org in self:
 			if org.equals(values):
 				return org
 		return None
-			
 			
 	@property
 	def fitness(self):
@@ -111,6 +106,8 @@ class Pool(list):
 		""" Generates a pool of organisms based on a prototype genome. """
 		assert size > 1
 		organisms = [Organism(genome) for i in range(size)]
-		for org in organisms[1:]:
+
+		for org in organisms:
 			org.mutate(frac, std)
+
 		return Pool(organisms)

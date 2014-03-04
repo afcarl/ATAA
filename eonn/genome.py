@@ -28,7 +28,7 @@ genome -- all hereditary information of an organism encoded in multiple genes
 """
 
 import random
-
+import numpy as np
 
 # Gene types
 NEURON = 'n'
@@ -71,6 +71,9 @@ class Gene(object):
 
 	def __str__(self):
 		return (self.type + ' %d' * len(self.dna[:-1]) + ' %+.4f') % tuple(self.dna)
+	
+	def equals(self,value):
+		return self.dna[-1] == value
 
 	def mutate(self, std=1.0, repl=0.25):
 		""" Mutating a gene involves altering its DNA (weight or bias). """
@@ -127,22 +130,14 @@ class Genome(list):
 			genes.append(Gene(s.type, dna))
 		return Genome(genes)
 
-	def distance(self, other):
-		""" Compute the average distance between two genomes. """
-		if [gene.key for gene in self] != [gene.key for gene in other]:
-			raise ValueError, 'Topologies are incompatible for crossover'
-		dist = sum([abs(x.dna[-1] - y.dna[-1]) for x, y in zip(self, other)])
-		return dist / len(self)
-
-	def copy(self): # DEPRECATED
-		""" Return a deep copy of this genome. """
-		return Genome([gene.copy() for gene in self])
-
 	def save(self, filename):
 		""" Save this genome's configuration to the specified filename. """
 		fh = open(filename, 'w')
 		fh.write(str(self))
 		fh.close()
+		
+	def copy(self):
+		return Genome(self)
 
 	@classmethod
 	def open(cls, filename):
@@ -153,3 +148,106 @@ class Genome(list):
 				type, dna = line[0], [eval(v) for v in line[1:].split()]
 				genes.append(Gene(type, dna))
 		return Genome(genes)
+	
+	@property
+	def weights(self):
+		""" Returns the weights of an organism """
+		w = [0]*len(self)
+		for i,gene in enumerate(self):
+			w[i] = gene.dna[-1]
+		return w
+		
+class BasicGenome(list):
+	""" A genome is a collection of genes and encodes a neural network. """
+	def __init__(self, genes):
+		super(BasicGenome, self).__init__([gene.copy() for gene in sorted(genes)])
+
+	def __str__(self):
+		return " ".join([str(gene) for gene in self])
+
+	def mutate(self, frac=0.2, std=1.0, repl=0.25):
+		""" Mutate this genome (effectively altering its behavior)
+
+		Keyword arguments:
+		frac	-- fraction of genes that can be mutated (probability)
+		std		-- specifies the standard deviation of the mutation distribution
+		repl	-- the probability that a gene is replaced when mutated
+
+		"""
+		for gene in self:
+			if random.random() < frac:
+					gene.mutate(std)
+
+	def crossover(self, other):
+		""" Produce a new genome by recombining two parents.
+
+		During crossover the parents' genes are aligned. Each gene of the new genome
+		is then either the average of its parents or a copy of one of them.
+		"""
+		if not len(self) == len(other):
+			raise ValueError, 'Topologies are incompatible for crossover'
+		
+		genes = list()
+		for s, o in zip(self, other):
+			if random.randint(0, 1):
+				dna = s.dna + o.dna 
+			else:
+				dna = random.choice([s.dna, o.dna])
+			genes.append(BasicGene(dna))
+		return BasicGenome(genes)
+
+	def save(self, filename):
+		""" Save this genome's configuration to the specified filename. """
+		fh = open(filename, 'w')
+		fh.write(str(self))
+		fh.close()
+		
+	def copy(self):
+		return BasicGenome(self)
+	
+	@classmethod
+	def from_list(cls, genome_list):
+		""" Load a genome from the specified config file. """
+		genes = list()
+		for gene in genome_list:
+			genes.append(BasicGene(gene))
+		return BasicGenome(genes)
+		
+	@property
+	def weights(self):
+		""" Returns the weights of an organism """
+		w = [0]*len(self)
+		for i,gene in enumerate(self):
+			w[i] = gene.dna
+		return w
+		
+class BasicGene(object):
+	""" A basic genetic building block encoding a single property in DNA. """
+	def __init__(self, dna):
+		self.dna = dna
+
+	def __cmp__(self, other):
+		return cmp(self.dna, other.dna)
+
+	def __eq__(self, other):
+		return self.dna == other.dna
+		
+	def equals(self,value):
+		return self.dna == value
+
+	def __str__(self):
+		return str(self.dna)
+
+	def mutate(self, std=0.1):
+		""" Mutating a gene involves altering its DNA (weight or bias). """
+		delta = np.random.normal(0, 0.1)
+		delta += self.dna
+		self.dna = delta
+		if self.dna < 0:
+			self.dna = 0
+		if self.dna > 1:
+			self.dna = 1
+
+	def copy(self):
+		""" Return a deep copy of this gene. """
+		return BasicGene(self.dna)

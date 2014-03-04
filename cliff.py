@@ -1,38 +1,38 @@
-import sys
 from eonn import eonn
-from eonn.genome import Genome
+from eonn.genome import Genome, BasicGenome
 from eonn.organism import Pool
-from math import cos, log, sqrt
+from eonn.network import Network
 import numpy as np
 from matplotlib import pyplot as plt
 import random as rand
+import itertools
 
-from string import letters, digits
-import os
+from sklearn.gaussian_process import GaussianProcess
 
-#from mpltools import style
-#style.use('ggplot')
+try:
+	from mpltools import style
+	style.use('ggplot')
+except:
+	pass
 
 # State limits
 LEFT = 0
 RIGHT = 1
 
 GOAL = np.array([0.85,0.15])
-GOALRADIUS = 0.03
+GOALRADIUS = 0.05
 
 WINDCHANCE = 0.01
 WINDSTRENGTH = [0,-0.2]
-
-EPOCHS = 100
 
 def wind():
 	return rand.random() < WINDCHANCE
 
 def update(pos, action):
 	""" Updates position with given action. """
-	if wind():
-		pos += np.array(WINDSTRENGTH)
-	return pos + (action * 0.05) 
+	# if wind():
+	# 	pos += np.array(WINDSTRENGTH)
+	return pos + (action * 0.01) 
 
 def checkBounds(pos):
 	return (pos < RIGHT).all() and (pos > LEFT).all()
@@ -44,57 +44,150 @@ def checkGoal(pos):
 def draw(l):
 	x = [s[0] for s in l]
 	y = [s[1] for s in l]
-	plt.scatter(x,y)
+	plt.scatter(x,y, marker = 'x')
+	plt.plot([GOAL[0]],[GOAL[1]], 'ro')
 	plt.xlim([0,1])
 	plt.ylim([0,1])
 	
 
-def cliff(policy, z = None, max_steps=500, verbose = False):
+def cliff(genome, z = None, max_steps=500, verbose = False):
 	""" Cliff evaluation function. """
+	policy = Network(genome)
 	if not z:
 		z = np.random.uniform(0,1,2)
 	pos = z
 	l = [pos]
 	ret = 0
-	for i in range(max_steps):
+	for i in range(max_steps+1):
 		action = policy.propagate(list(pos),t=1)
 		pos = update(pos, np.array(action))
-		if verbose:
-			l.append(list(pos))
+		l.append(list(pos))
 		if checkGoal(pos):
 			ret = 0.9 ** i * 1000
 			break
 		if not checkBounds(pos):
-			ret = -1000
+			ret = 0.9 ** i * -1000
 			break;
-		ret += 1
-	if verbose:
+		ret = 0.9 ** i
+	print "Return", ret
+	if verbose or ret > 1:
 		draw(l)
+		plt.show()
 	return ret
+	
+def score_function(x_predict,reward_predict,MSE):
+	"""
+		Score function for selecting (pi,z)
+		Returns a matrix of dimension len(reward_predict)*
+		A score for pi and z for every row in x_predict and corresponding reward_predict
+	"""
+	return reward_predict
 
+
+
+def doEvolution(pi_pool, z_pool , GP):
+	"""
+		Evolve the organisms and predict their values according to the GP
+	"""
+	# Evolve pools
+	eonn.epoch(pi_pool,len(pi_pool))
+	eonn.epoch(z_pool,len(z_pool))
+	
+	# Create prediction matrix for GP
+	x_predict = [np.append(pi_org.weights,z_org.weights) for pi_org in pi_pool for z_org in z_pool]
+	
+	# Get rewards and MSE
+	reward_predict, MSE = GP.predict(x_predict, eval_MSE = True)
+	
+	return pi_pool, z_pool, x_predict, reward_predict, MSE
+
+def addScores(pi_pool,z_pool,score_matrix):
+		"""
+			Add the scores from the score_vector to the organisms in the pools
+		"""
+		# Append the scores to the evaluations of the organisms
+		for i,score in enumerate(score_vector):
+			# Get the organisms from the pools
+			pi_org = pi_pool.find(x_predict[i][:-2])
+			z_org = z_pool.find(x_predict[i][-2:])
+			
+			pi_org.evals.append(score)
+			z_org.evals.append(score)
+
+def acquisition(GP):
+	"""
+		Select the best (pi,z)-pair to evaluate using GP and GA
+	"""
+	epochs = 25
+	
+	# Create a pool for the policies
+	pi_pool = Pool.spawn(Genome.open('cliff.net'),20,std = 8)
+	
+	# Create a pool of z's, startubg around [0.5,0.5], should probably be better
+	z_pool  = Pool.spawn(BasicGenome.from_list([0.5,0.5]),20, std = 1, frac = 1)
+	
+	for _ in xrange(epochs):
+		pi_pool, z_pool, x_predict, reward_predict, MSE = doEvolution(pi_pool, z_pool, GP)
+		
+		# Get the scores according to the score function
+		score_matrix = score_function(x_predict,reward_predict,MSE)
+	
+	# Get the current best combination (pi,z) and return the organisms for those
+	sorted_reward = np.argsort(score_matrix)
+	best_combination = x_predict[sorted_reward[-1]]
+	
+	pi_org = pi_pool.find(best_combination[:-2])
+	z_org = z_pool.find(best_combination[-2:])
+	
+	return pi_org, z_org
+	
+def initGP():
+	"""Do 2 simulations with random pi,z and create GP, X, y"""
+	genome = Genome.open('cliff.net')
+	genome.mutate( std = 8)
+	w = genome.weights
+	z = list(np.random.uniform(0,1,2))
+	reward = cliff(genome,z)
+	
+	X = np.atleast_2d(w+z)
+	y = np.atleast_2d([reward])
+	
+	genome.mutate()
+	w = genome.weights
+	z = list(np.random.uniform(0,1,2))
+	reward = cliff(genome,z)
+	
+	X = np.append(X,[w+z],axis = 0)
+	y = np.append(y, [reward])
+	
+	GP = GaussianProcess()
+	GP.fit(X,y)
+	
+	return GP,X,y
+
+def updateGP(GP,X,y,w,z,reward):
+	X = np.append(X,[w+z],axis = 0)
+	y = np.append(y, [reward])
+	GP.fit(X,y)
+	return GP, X, y
 
 def main():
 	""" Main function. """
-	pool = Pool.spawn(Genome.open('cliff.net'), 5, std=1)
 	
-	# Set evolutionary parameters
-	eonn.samplesize	 = 5		# Sample size used for tournament selection
-	eonn.keep		 = 5		# Nr. of organisms copied to the next generation (elitism)
-	eonn.mutate_prob = 0.75		# Probability that offspring is being mutated
-	eonn.mutate_frac = 0.2		# Fraction of genes that get mutated
-	eonn.mutate_std	 = 0.1		# Std. dev. of mutation distribution (gaussian)
-	eonn.mutate_repl = 0.25		# Probability that a gene gets replaced
+	GP,X,y = initGP()
 	
-	
-	# Evolve population
-	pool = eonn.optimize(pool,cliff, EPOCHS)
-	champion = max(pool)
-	ret = 0
-	for i in range(10):
-		ret += cliff(champion.policy,verbose = True)
-	print ret / 10
-	plt.show()
-	
+	for i in xrange(100):
+		pi_org, z_org = acquisition(GP)
+		print "Evaluation: ", i+1,
+		z = z_org.weights
+		reward = cliff(pi_org.genome, z)
+		w = pi_org.genome.weights
+		GP,X,y = updateGP(GP,X,y,w,z,reward)
+
+
+
+
+
 
 if __name__ == '__main__':
 	main()
