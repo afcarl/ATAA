@@ -75,14 +75,39 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 		plt.show()
 	return ret
 	
-def score_function(x_predict,reward_predict,MSE):
+def score_function(x_predict,reward_predict,MSE, piAmount, zAmount):
 	"""
 		Score function for selecting (pi,z)
 		Returns a matrix of dimension len(reward_predict)*
 		A score for pi and z for every row in x_predict and corresponding reward_predict
 	"""
-	return reward_predict
 
+	# TODO: proper tests whether reshaping and stuff is working correctly
+	# currently reward_predict is producing similar numbers all over the place
+	# which is weird!
+
+	# reshape results to grid
+	reward_predictGrid = np.reshape(reward_predict, (piAmount, zAmount))
+	MSEGrid = np.reshape(MSE, (piAmount, zAmount))
+
+	# get variance of Z over pi and reshape to score per pi-z pair
+	varZ = np.zeros((zAmount,1))
+	for i in xrange(zAmount):
+		varZ[i] = np.var(reward_predictGrid[:][i])
+	zScore = np.ravel(np.tile(varZ, piAmount))
+	
+	# get mean of pi over Z and reshape to score per pi-z pair
+	meanPi = np.zeros((piAmount, 1))
+	for i in xrange(piAmount):
+		meanPi[i] = np.mean(reward_predictGrid[i][:])
+	piScore = np.ravel(np.repeat(meanPi, zAmount))
+
+	# normalize scores
+	uncertaintyScore = MSE / np.max(np.abs(MSE))
+	piScore = piScore / np.max(np.abs(piScore))
+	zScore = zScore / np.max(np.abs(zScore))
+
+	return uncertaintyScore + piScore + zScore
 
 
 def doEvolution(pi_pool, z_pool , GP):
@@ -130,7 +155,7 @@ def acquisition(GP):
 		pi_pool, z_pool, x_predict, reward_predict, MSE = doEvolution(pi_pool, z_pool, GP)
 		
 		# Get the scores according to the score function
-		score_matrix = score_function(x_predict,reward_predict,MSE)
+		score_matrix = score_function(x_predict,reward_predict,MSE, len(pi_pool), len(z_pool))
 	
 	# Get the current best combination (pi,z) and return the organisms for those
 	sorted_reward = np.argsort(score_matrix)
