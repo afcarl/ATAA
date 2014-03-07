@@ -70,9 +70,8 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 			break;
 		ret = 0.9 ** i
 	print "Return", ret
-	if verbose or ret > 1:
+	if verbose:
 		draw(l)
-		plt.show()
 	return ret
 	
 def score_function(x_predict,reward_predict,MSE, piAmount, zAmount):
@@ -103,11 +102,8 @@ def score_function(x_predict,reward_predict,MSE, piAmount, zAmount):
 	piScore = np.ravel(np.repeat(meanPi, zAmount))
 
 	# normalize scores
-	uncertaintyScore = MSE / np.max(np.abs(MSE))
-	piScore = piScore / np.max(np.abs(piScore))
-	zScore = zScore / np.max(np.abs(zScore))
 
-	return uncertaintyScore + piScore + zScore
+	return 1.96 * MSE + piScore + zScore
 
 
 def doEvolution(pi_pool, z_pool , GP):
@@ -115,8 +111,8 @@ def doEvolution(pi_pool, z_pool , GP):
 		Evolve the organisms and predict their values according to the GP
 	"""
 	# Evolve pools
-	eonn.epoch(pi_pool,len(pi_pool))
-	eonn.epoch(z_pool,len(z_pool))
+	pi_pool = eonn.epoch(pi_pool,len(pi_pool))
+	z_pool = eonn.epoch(z_pool,len(z_pool))
 	
 	# Create prediction matrix for GP
 	x_predict = [np.append(pi_org.weights,z_org.weights) for pi_org in pi_pool for z_org in z_pool]
@@ -143,22 +139,22 @@ def acquisition(GP):
 	"""
 		Select the best (pi,z)-pair to evaluate using GP and GA
 	"""
-	epochs = 25
+	epochs = 10
 	
 	# Create a pool for the policies
-	pi_pool = Pool.spawn(Genome.open('cliff.net'),20,std = 8)
+	pi_pool = Pool.spawn(Genome.open('noHidden.net'),20,std = 8)
 	
-	# Create a pool of z's, startubg around [0.5,0.5], should probably be better
+	# Create a pool of z's, starting around [0.5,0.5], should probably be better
 	z_pool  = Pool.spawn(BasicGenome.from_list([0.5,0.5]),20, std = 1, frac = 1)
 	
 	for _ in xrange(epochs):
 		pi_pool, z_pool, x_predict, reward_predict, MSE = doEvolution(pi_pool, z_pool, GP)
 		
 		# Get the scores according to the score function
-		score_matrix = score_function(x_predict,reward_predict,MSE, len(pi_pool), len(z_pool))
+		score_vector = score_function(x_predict,reward_predict,MSE, len(pi_pool), len(z_pool))
 	
 	# Get the current best combination (pi,z) and return the organisms for those
-	sorted_reward = np.argsort(score_matrix)
+	sorted_reward = np.argsort(score_vector)
 	best_combination = x_predict[sorted_reward[-1]]
 	
 	pi_org = pi_pool.find(best_combination[:-2])
@@ -168,7 +164,7 @@ def acquisition(GP):
 	
 def initGP():
 	"""Do 2 simulations with random pi,z and create GP, X, y"""
-	genome = Genome.open('cliff.net')
+	genome = Genome.open('noHidden.net')
 	genome.mutate( std = 8)
 	w = genome.weights
 	z = list(np.random.uniform(0,1,2))
@@ -196,20 +192,40 @@ def updateGP(GP,X,y,w,z,reward):
 	GP.fit(X,y)
 	return GP, X, y
 
+
+def find_best(GP):
+	epochs = 500
+	
+	pool = Pool.spawn(Genome.open('noHidden.net'),50, std = 8)
+	all_z = itertools.product(np.arange(0, 1, 0.1), repeat=2)
+	for _ in xrange(epochs):
+		pool = eonn.epoch(pool, len(pool))
+		for org in pool:
+			for z in all_z:
+				reward = GP.predict(np.append(org.weights, np.array(z)))
+				org.evals.append(reward)
+	
+	champion = max(pool)
+	
+	return champion
+
 def main():
 	""" Main function. """
 	
 	GP,X,y = initGP()
 	
-	for i in xrange(100):
+	for i in xrange(250):
 		pi_org, z_org = acquisition(GP)
 		print "Evaluation: ", i+1,
 		z = z_org.weights
 		reward = cliff(pi_org.genome, z)
 		w = pi_org.genome.weights
 		GP,X,y = updateGP(GP,X,y,w,z,reward)
-
-
+		
+	champion = find_best(GP)
+	for i in range(10):
+		cliff(champion.genome, verbose = True)
+	plt.show()
 
 
 

@@ -190,7 +190,7 @@ class BasicGenome(list):
 		genes = list()
 		for s, o in zip(self, other):
 			if random.randint(0, 1):
-				dna = s.dna + o.dna 
+				dna = (s.dna + o.dna) / 2
 			else:
 				dna = random.choice([s.dna, o.dna])
 			genes.append(BasicGene(dna))
@@ -216,9 +216,9 @@ class BasicGenome(list):
 	@property
 	def weights(self):
 		""" Returns the weights of an organism """
-		w = [0]*len(self)
-		for i,gene in enumerate(self):
-			w[i] = gene.dna
+		w = []
+		for gene in self:
+			w.append(gene.dna)
 		return w
 		
 class BasicGene(object):
@@ -241,8 +241,7 @@ class BasicGene(object):
 	def mutate(self, std=0.1):
 		""" Mutating a gene involves altering its DNA (weight or bias). """
 		delta = np.random.normal(0, 0.1)
-		delta += self.dna
-		self.dna = delta
+		self.dna += delta
 		if self.dna < 0:
 			self.dna = 0
 		if self.dna > 1:
