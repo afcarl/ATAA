@@ -25,7 +25,6 @@ WINDCHANCE = 0.01
 
 EPOCHS = 10
 EVALS = 5
-ROUNDS = 50
 
 def wind():
 	return rand.random() < WINDCHANCE
@@ -90,7 +89,8 @@ def main():
 	directory = "pics/"+''.join(rand.sample(letters+digits, 5))
 	os.makedirs(directory)
 	# Evolve population
-	for j in xrange(1,ROUNDS+1):
+	rounds = 50
+	for j in xrange(1,rounds+1):
 		pool = eonn.optimize(pool, cliff, epochs=EPOCHS, evals = EVALS)
 		print "AFTER EPOCH", j*EPOCHS
 		print "average fitness %.1f" % pool.fitness
