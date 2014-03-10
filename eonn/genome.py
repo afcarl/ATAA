@@ -249,12 +249,12 @@ class BasicGene(object):
 
 	def mutate(self, std=0.1):
 		""" Mutating a gene involves altering its DNA (weight or bias). """
-		delta = np.random.normal(0, 0.1)
-		self.dna += delta
-		if self.dna < 0:
-			self.dna = 0
-		if self.dna > 1:
-			self.dna = 1
+		delta = np.random.normal(0, std)
+		
+		if self.dna+delta < 0 or self.dna+delta > 1:
+			self.mutate(std)
+		else:
+			self.dna += delta
 
 	def copy(self):
 		""" Return a deep copy of this gene. """
