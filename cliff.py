@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import random as rand
 import itertools
-import math as Math
+import math
 
 from sklearn.gaussian_process import GaussianProcess
 
@@ -77,7 +77,6 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 	
 	if verbose:
 		draw(l)
-		plt.show()
 	return ret
 	
 def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
@@ -111,7 +110,7 @@ def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
 	if MSE.max() > 0:
 		MSE /= MSE.max()
 
-	z_pi_score = np.ravel(mean_pi.dot(var_z))
+	z_pi_score = 5 * np.ravel(mean_pi.dot(var_z))
 	
 	return 1.96 * MSE + z_pi_score
 
@@ -221,29 +220,29 @@ def find_best(GP):
 				reward = GP.predict(np.append(org.weights, z))
 				org.evals.append(reward[0])
 		if i % 10 == 0:
-			print "Average fitness after",i,"evaluations:",pool.fitness
+			print "Avg fitness:\t",i,"evaluations:\t", "%.1f" % pool.fitness
 	champion = max(pool)
 	
 	return champion
 
 def main():
 	""" Main function. """
-	
+	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
 	
-	for i in xrange(1,100):
-		pi_org, z_org = acquisition(GP, i * 5)
+	for i in xrange(1,200):
+		pi_org, z_org = acquisition(GP, int(math.sqrt(i)) * 5)
 		z = z_org.weights
 		
 		reward = cliff(pi_org.genome, z)
-		print "Evaluation: ", i+1, "Return", reward
+		print "Evaluation:\t", "%d\t" % i, "Return:\t", "%.1f\t" % reward, np.array(z)
 
 		w = pi_org.genome.weights
 		GP,X,y = updateGP(GP,X,y,w,z,reward)
 		
 	champion = find_best(GP)
 	r = []
-	for i in range(10):
+	for i in range(100):
 		r.append(cliff(champion.genome, verbose = True))
 	print sum(r)/len(r)
 	plt.show()
