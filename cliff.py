@@ -214,14 +214,15 @@ def find_best(GP):
 	
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
 	all_z = list(itertools.product(np.linspace(0.1, 0.9, 9), repeat=2))
-	for i in xrange(epochs):
+	for n in xrange(epochs):
 		pool = eonn.epoch(pool, len(pool))
-		for org in pool:
-			for z in all_z:
-				reward = GP.predict(np.append(org.weights, z))
-				org.evals.append(reward[0])
-		if i % 10 == 0:
-			print "Avg fitness:\t",i,"evaluations:\t", "%.1f" % pool.fitness
+		weights = [np.append(org.weights,z) for org in pool for z in all_z]
+		reward = GP.predict(weights)
+		for i in xrange(len(pool)):
+			pool[i].evals = reward[i*len(all_z):(i+1)*len(all_z)]
+
+		if n % 10 == 0:
+			print "Avg fitness:\t",n,"evaluations:\t", "%.1f" % pool.fitness
 	champion = max(pool)
 	
 	return champion
@@ -231,7 +232,7 @@ def main():
 	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
 	
-	for i in xrange(1,200):
+	for i in xrange(1,500):
 		pi_org, z_org = acquisition(GP, int(math.sqrt(i)) * 5)
 		z = z_org.weights
 		
