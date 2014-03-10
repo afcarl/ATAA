@@ -249,9 +249,9 @@ class BasicGene(object):
 
 	def mutate(self, std = 0.1):
 		""" Mutating a gene involves altering its DNA (weight or bias). """
-		delta = np.random.normal(0, 0.1)
+		delta = np.random.normal(0,1)
 		
-		if self.dna+delta < 0 or self.dna+delta > 1:
+		if self.dna+delta <= 0 or self.dna+delta >= 1:
 			self.mutate(std)
 		else:
 			self.dna += delta

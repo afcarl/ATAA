@@ -176,25 +176,26 @@ def acquisition(GP, epochs):
 	
 def initGP():
 	"""Do 2 simulations with random pi,z and create GP, X, y"""
-	genome = Genome.open(NN_STRUCTURE_FILE)
-	genome.mutate( std = 8)
-	w = genome.weights
-	z = list(np.random.uniform(0,1,2))
-	reward = cliff(genome,z)
+	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE), 68, std = 10)
+	X = []
+	for org in pool:
+		for gene in org.genome:
+			gene.mutate()
+		genome = org.genome
+		w = genome.weights
+		z = list(np.random.uniform(0,1,2))
+		reward = cliff(genome,z)
 	
-	X = np.atleast_2d(w+z)
-	y = np.atleast_2d([reward])
-	
-	genome.mutate()
-	w = genome.weights
-	z = list(np.random.uniform(0,1,2))
-	reward = cliff(genome,z)
-	
-	X = np.append(X,[w+z],axis = 0)
-	y = np.append(y, [reward])
+		if not len(X):
+			X = np.atleast_2d(w+z)
+			y = np.atleast_2d([reward])
+		else:
+			X = np.append(X,[w+z],axis = 0)
+			y = np.append(y, [reward])
 	
 	#Maybe use other kernel?
-	GP = GaussianProcess()
+	
+	GP = GaussianProcess(regr = 'quadratic', corr = 'squared_exponential')
 	GP.fit(X,y)
 	
 	return GP,X,y
