@@ -20,8 +20,8 @@ except:
 LEFT = 0
 RIGHT = 1
 
-GOAL = np.array([0.8,0.2])
-GOALRADIUS = 0.2
+GOAL = np.array([0.85,0.15])
+GOALRADIUS = 0.15
 
 WINDCHANCE = 0.01
 WINDSTRENGTH = [0,-0.2]
@@ -72,8 +72,12 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 			ret = 0.9 ** i * -1000
 			break;
 		ret = 0.9 ** i
+
+	print "Return", ret, z
+	
 	if verbose:
 		draw(l)
+		plt.show()
 	return ret
 	
 def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
@@ -86,19 +90,27 @@ def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
 	# reshape results to grid
 	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
 
-	#Rescale pi and controllability, these need to be improved
-	weight_controllability_score = 200
-	weight_pi_score = 40
-
 	# get variance of Z over pi and reshape to score per pi-z pair
-	var_z = np.var(reward_predictGrid, axis=0, keepdims=True) 
-	var_z *= weight_controllability_score
+	var_z = np.var(reward_predictGrid, axis=0, keepdims=True)
+
+	var_z -= var_z.min()
+	if var_z.max() > 0:
+		var_z /= var_z.max()
+
+	# var_z *= weight_controllability_score
 	
 		
 	# get mean of pi over Z and reshape to score per pi-z pair
 	mean_pi = np.mean(reward_predictGrid, axis=1, keepdims=True)
-	mean_pi *= weight_pi_score
-	
+
+	mean_pi -= mean_pi.min()
+	if mean_pi.max() > 0:
+		mean_pi /= mean_pi.max()
+
+	MSE -= MSE.min()
+	if MSE.max() > 0:
+		MSE /= MSE.max()
+
 	z_pi_score = np.ravel(mean_pi.dot(var_z))
 	
 	return 1.96 * MSE + z_pi_score
@@ -137,7 +149,7 @@ def acquisition(GP):
 	"""
 		Select the best (pi,z)-pair to evaluate using GP and GA
 	"""
-	epochs = 10
+	epochs = 500
 	
 	# Create a pool for the policies
 	pi_pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),20,std = 8)
@@ -180,6 +192,7 @@ def initGP():
 	X = np.append(X,[w+z],axis = 0)
 	y = np.append(y, [reward])
 	
+	#Maybe use other kernel?
 	GP = GaussianProcess()
 	GP.fit(X,y)
 	
@@ -219,8 +232,10 @@ def main():
 	for i in xrange(100):
 		pi_org, z_org = acquisition(GP)
 		z = z_org.weights
+		
 		reward = cliff(pi_org.genome, z)
 		print "Evaluation: ", i+1, "Return", reward
+
 		w = pi_org.genome.weights
 		GP,X,y = updateGP(GP,X,y,w,z,reward)
 		
