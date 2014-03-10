@@ -206,12 +206,21 @@ class BasicGenome(list):
 		return BasicGenome(self)
 	
 	@classmethod
-	def from_list(cls, genome_list):
-		""" Load a genome from the specified config file. """
-		genes = list()
-		for gene in genome_list:
-			genes.append(BasicGene(gene))
-		return BasicGenome(genes)
+	def from_list(cls, genome_list, size = 1):
+		""" Load a genome from a list of genomes """
+		if size == 1:
+			genes = list()
+			for gene in genome_list:
+				genes.append(BasicGene(gene))
+			return BasicGenome(genes)
+		else:
+			l = []
+			for genome in genome_list:
+				genes = list()
+				for gene in genome:
+					genes.append(BasicGene(gene))
+				l.append(BasicGenome(genes))
+			return l
 		
 	@property
 	def weights(self):

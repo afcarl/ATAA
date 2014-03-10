@@ -1,6 +1,8 @@
+from __future__ import division
+
 from eonn import eonn
 from eonn.genome import Genome, BasicGenome
-from eonn.organism import Pool
+from eonn.organism import Pool, Organism
 from eonn.network import Network
 import numpy as np
 from matplotlib import pyplot as plt
@@ -66,14 +68,12 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 		pos = update(pos, np.array(action))
 		l.append(list(pos))
 		if checkGoal(pos):
-			ret = 0.9 ** (float(i)/100) * 1000
+			ret = 0.9 ** i * 1000
 			break
 		if not checkBounds(pos):
 			ret = 0.9 ** i * -1000
 			break;
 		ret = 0.9 ** i
-
-	print "Return", ret, z
 	
 	if verbose:
 		draw(l)
@@ -145,17 +145,19 @@ def add_scores(pi_pool, z_pool, x_predict, score_vector):
 			pi_org.evals.append(score)
 			z_org.evals.append(score)
 
-def acquisition(GP):
+def acquisition(GP, epochs):
 	"""
 		Select the best (pi,z)-pair to evaluate using GP and GA
 	"""
-	epochs = 500
 	
 	# Create a pool for the policies
 	pi_pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),20,std = 8)
 	
 	# Create a pool of z's, starting around [0.5,0.5], should probably be better
-	z_pool  = Pool.spawn(BasicGenome.from_list([0.5,0.5]),20, std = 1, frac = 1)
+	z_list = list(itertools.product(np.arange(0.1,1,1/5),np.arange(0.1,1,1/4)))
+	genomes = BasicGenome.from_list(z_list, 20)
+	org_list = [Organism(genome) for genome in genomes]
+	z_pool  = Pool(org_list)
 	
 	for _ in xrange(epochs):
 		pi_pool, z_pool, x_predict, reward_predict, MSE = do_evolution(pi_pool, z_pool, GP)
@@ -229,8 +231,8 @@ def main():
 	
 	GP,X,y = initGP()
 	
-	for i in xrange(100):
-		pi_org, z_org = acquisition(GP)
+	for i in xrange(1,100):
+		pi_org, z_org = acquisition(GP, i * 5)
 		z = z_org.weights
 		
 		reward = cliff(pi_org.genome, z)
@@ -245,9 +247,6 @@ def main():
 		r.append(cliff(champion.genome, verbose = True))
 	print sum(r)/len(r)
 	plt.show()
-
-
-
 
 if __name__ == '__main__':
 	main()
