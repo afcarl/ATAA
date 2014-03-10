@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import random as rand
 import itertools
+import math as Math
 
 from sklearn.gaussian_process import GaussianProcess
 
@@ -19,11 +20,13 @@ except:
 LEFT = 0
 RIGHT = 1
 
-GOAL = np.array([0.85,0.15])
-GOALRADIUS = 0.05
+GOAL = np.array([0.8,0.2])
+GOALRADIUS = 0.2
 
 WINDCHANCE = 0.01
 WINDSTRENGTH = [0,-0.2]
+ 
+NN_STRUCTURE_FILE = 'noHidden.net'
 
 def wind():
 	return rand.random() < WINDCHANCE
@@ -63,13 +66,12 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 		pos = update(pos, np.array(action))
 		l.append(list(pos))
 		if checkGoal(pos):
-			ret = 0.9 ** i * 1000
+			ret = 0.9 ** (float(i)/100) * 1000
 			break
 		if not checkBounds(pos):
 			ret = 0.9 ** i * -1000
 			break;
 		ret = 0.9 ** i
-	print "Return", ret
 	if verbose:
 		draw(l)
 	return ret
@@ -92,16 +94,14 @@ def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
 	var_z = np.var(reward_predictGrid, axis=0, keepdims=True) 
 	var_z *= weight_controllability_score
 	
+		
 	# get mean of pi over Z and reshape to score per pi-z pair
 	mean_pi = np.mean(reward_predictGrid, axis=1, keepdims=True)
 	mean_pi *= weight_pi_score
-
-
-	# print np.linalg.norm(MSE), np.linalg.norm(mean_pi), np.linalg.norm(var_z)
-
+	
 	z_pi_score = np.ravel(mean_pi.dot(var_z))
 	
-	return MSE + z_pi_score
+	return 1.96 * MSE + z_pi_score
 
 def do_evolution(pi_pool, z_pool , GP):
 	"""
@@ -125,6 +125,7 @@ def add_scores(pi_pool, z_pool, x_predict, score_vector):
 		"""
 		# Append the scores to the evaluations of the organisms
 		for i,score in enumerate(score_vector):
+			
 			# Get the organisms from the pools
 			pi_org = pi_pool.find(x_predict[i][:-2])
 			z_org = z_pool.find(x_predict[i][-2:])
@@ -139,7 +140,7 @@ def acquisition(GP):
 	epochs = 10
 	
 	# Create a pool for the policies
-	pi_pool = Pool.spawn(Genome.open('noHidden.net'),20,std = 8)
+	pi_pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),20,std = 8)
 	
 	# Create a pool of z's, starting around [0.5,0.5], should probably be better
 	z_pool  = Pool.spawn(BasicGenome.from_list([0.5,0.5]),20, std = 1, frac = 1)
@@ -162,7 +163,7 @@ def acquisition(GP):
 	
 def initGP():
 	"""Do 2 simulations with random pi,z and create GP, X, y"""
-	genome = Genome.open('noHidden.net')
+	genome = Genome.open(NN_STRUCTURE_FILE)
 	genome.mutate( std = 8)
 	w = genome.weights
 	z = list(np.random.uniform(0,1,2))
@@ -192,17 +193,20 @@ def updateGP(GP,X,y,w,z,reward):
 
 
 def find_best(GP):
-	epochs = 500
+	print "Finding the best policy"
 	
-	pool = Pool.spawn(Genome.open('noHidden.net'),50, std = 8)
-	all_z = itertools.product(np.arange(0, 1, 0.1), repeat=2)
-	for _ in xrange(epochs):
+	epochs = 100
+	
+	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
+	all_z = list(itertools.product(np.linspace(0.1, 0.9, 9), repeat=2))
+	for i in xrange(epochs):
 		pool = eonn.epoch(pool, len(pool))
 		for org in pool:
 			for z in all_z:
-				reward = GP.predict(np.append(org.weights, np.array(z)))
-				org.evals.append(reward)
-	
+				reward = GP.predict(np.append(org.weights, z))
+				org.evals.append(reward[0])
+		if i % 10 == 0:
+			print "Average fitness after",i,"evaluations:",pool.fitness
 	champion = max(pool)
 	
 	return champion
@@ -212,17 +216,19 @@ def main():
 	
 	GP,X,y = initGP()
 	
-	for i in xrange(250):
+	for i in xrange(100):
 		pi_org, z_org = acquisition(GP)
-		print "Evaluation: ", i+1,
 		z = z_org.weights
 		reward = cliff(pi_org.genome, z)
+		print "Evaluation: ", i+1, "Return", reward
 		w = pi_org.genome.weights
 		GP,X,y = updateGP(GP,X,y,w,z,reward)
 		
 	champion = find_best(GP)
+	r = []
 	for i in range(10):
-		cliff(champion.genome, verbose = True)
+		r.append(cliff(champion.genome, verbose = True))
+	print sum(r)/len(r)
 	plt.show()
 
 
