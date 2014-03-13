@@ -160,7 +160,7 @@ class Genome(list):
 class BasicGenome(list):
 	""" A genome is a collection of genes and encodes a neural network. """
 	def __init__(self, genes):
-		super(BasicGenome, self).__init__([gene.copy() for gene in sorted(genes)])
+		super(BasicGenome, self).__init__([gene.copy() for gene in genes])
 
 	def __str__(self):
 		return " ".join([str(gene) for gene in self])
@@ -190,7 +190,7 @@ class BasicGenome(list):
 		genes = list()
 		for s, o in zip(self, other):
 			if random.randint(0, 1):
-				dna = (s.dna + o.dna) / 2
+				dna = (s.dna + o.dna) / 2.
 			else:
 				dna = random.choice([s.dna, o.dna])
 			genes.append(BasicGene(dna))
