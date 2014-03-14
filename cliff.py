@@ -26,7 +26,7 @@ GOAL = np.array([0.85,0.15])
 GOALRADIUS = 0.15
 
 WINDCHANCE = 0.01
-WINDSTRENGTH = [0,-0.2]
+WINDSTRENGTH = [0,0]
  
 NN_STRUCTURE_FILE = 'noHidden.net'
 
@@ -35,9 +35,10 @@ def wind():
 
 def update(pos, action):
 	""" Updates position with given action. """
-	# if wind():
-	# 	pos += np.array(WINDSTRENGTH)
 	return pos + (action * 0.01) 
+
+def gust_of_wind(pos):
+	return pos + np.array(WINDSTRENGTH)
 
 def checkBounds(pos):
 	return (pos < RIGHT).all() and (pos > LEFT).all()
@@ -57,10 +58,12 @@ def draw(l):
 
 def cliff(genome, z = None, max_steps=500, verbose = False):
 	""" Cliff evaluation function. """
+	no_wind_yet = False
 	policy = Network(genome)
 	if not z:
-		z = np.random.uniform(0,1,2)
-	pos = z
+		z = [np.random.uniform(0,0.5)]
+	WINDSTRENGTH[1] = -z[0]
+	pos = [0.1,0.1]
 	l = [pos]
 	ret = 0
 	for i in range(max_steps+1):
@@ -68,12 +71,14 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 		pos = update(pos, np.array(action))
 		l.append(list(pos))
 		if checkGoal(pos):
-			ret = 0.9 ** i * 1000
+			ret = 0.99 ** i * 100
 			break
+		if no_wind_yet and pos[0] > 0.5:
+			pos = gust_of_wind(pos)
+			no_wind_yet = True
 		if not checkBounds(pos):
-			ret = 0.9 ** i * -1000
 			break;
-		ret = 0.9 ** i
+		ret = 0
 	
 	if verbose:
 		draw(l)
@@ -138,8 +143,8 @@ def add_scores(pi_pool, z_pool, x_predict, score_vector):
 		for i,score in enumerate(score_vector):
 			
 			# Get the organisms from the pools
-			pi_org = pi_pool.find(x_predict[i][:-2])
-			z_org = z_pool.find(x_predict[i][-2:])
+			pi_org = pi_pool.find(x_predict[i][:-1])
+			z_org = z_pool.find(x_predict[i][-1:])
 			
 			pi_org.evals.append(score)
 			z_org.evals.append(score)
@@ -153,11 +158,11 @@ def acquisition(GP, epochs):
 	pi_pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),20,std = 8)
 	
 	# Create a pool of z's, starting around [0.5,0.5], should probably be better
-	z_list = list(itertools.product(np.arange(0.1,1,1/5),np.arange(0.1,1,1/4)))
+	z_list = list(itertools.product(np.arange(0,0.5,1/float(20))))
 	genomes = BasicGenome.from_list(z_list, 20)
 	org_list = [Organism(genome) for genome in genomes]
 	z_pool  = Pool(org_list)
-	
+
 	for _ in xrange(epochs):
 		pi_pool, z_pool, x_predict, reward_predict, MSE = do_evolution(pi_pool, z_pool, GP)
 		# Get the scores according to the score function
@@ -169,8 +174,8 @@ def acquisition(GP, epochs):
 	sorted_reward = np.argsort(score_vector)
 	best_combination = x_predict[sorted_reward[-1]]
 	
-	pi_org = pi_pool.find(best_combination[:-2])
-	z_org = z_pool.find(best_combination[-2:])
+	pi_org = pi_pool.find(best_combination[:-1])
+	z_org = z_pool.find(best_combination[-1:])
 	
 	return pi_org, z_org
 	
@@ -183,7 +188,7 @@ def initGP():
 			gene.mutate()
 		genome = org.genome
 		w = genome.weights
-		z = list(np.random.uniform(0,1,2))
+		z = [np.random.uniform(0,0.5)]
 		reward = cliff(genome,z)
 	
 		if not len(X):
@@ -195,7 +200,7 @@ def initGP():
 	
 	#Maybe use other kernel?
 	
-	GP = GaussianProcess(regr = 'quadratic', corr = 'squared_exponential')
+	GP = GaussianProcess(theta0 = 0.1, thetaL = 0.001, thetaU = 1, regr = 'quadratic', corr = 'squared_exponential')
 	GP.fit(X,y)
 	
 	return GP,X,y
@@ -213,7 +218,7 @@ def find_best(GP):
 	epochs = 100
 	
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
-	all_z = list(itertools.product(np.linspace(0.1, 0.9, 9), repeat=2))
+	all_z = list(np.linspace(0, 0.5, 10))
 	for n in xrange(epochs):
 		pool = eonn.epoch(pool, len(pool))
 		weights = [np.append(org.weights,z) for org in pool for z in all_z]
@@ -232,8 +237,8 @@ def main():
 	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
 	
-	for i in xrange(1,500):
-		pi_org, z_org = acquisition(GP, int(math.sqrt(i)) * 5)
+	for i in xrange(1,2):
+		pi_org, z_org = acquisition(GP, int(math.sqrt(i)) * 5 + 10)
 		z = z_org.weights
 		
 		reward = cliff(pi_org.genome, z)

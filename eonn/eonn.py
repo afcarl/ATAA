@@ -28,7 +28,7 @@ import random
 from pprint import *
 
 samplesize	= 5			# Sample size used for tournament selection
-keep				= 0			# Nr. of organisms copied to the next generation (elitism)
+keep				= 2			# Nr. of organisms copied to the next generation (elitism)
 mutate_prob = 0.75	# Probability that offspring is being mutated
 mutate_frac = 0.2		# Fraction of genes that get mutated
 mutate_std	= 1.0		# Std. dev. of mutation distribution (gaussian)
