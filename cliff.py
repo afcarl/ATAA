@@ -2,6 +2,7 @@ import sys
 from eonn import eonn
 from eonn.genome import Genome
 from eonn.organism import Pool
+from eonn.network import Network
 from math import cos, log
 import numpy as np
 from matplotlib import pyplot as plt
@@ -10,6 +11,16 @@ import random as rand
 
 from string import letters, digits
 import os
+
+# load paths
+max_steps = 500
+
+noWindPath = "pure-evolution result/noWind"
+littleWindPath = "pure-evolution result/littleWind"
+muchWindPath = "pure-evolution result/muchWind"
+
+# save paths
+gridPath = "gridImages"
 
 # State limits
 XMIN =	0
@@ -21,7 +32,7 @@ XGOAL = 0.85
 YGOAL = 0.15
 GOALRADIUS = 0.03
 
-WINDCHANCE = 0.001
+WINDCHANCE = 0.0
 WINDSTRENGTH = 0.2
 
 EPOCHS = 10
@@ -90,7 +101,7 @@ def main():
 	directory = "pics/"+''.join(rand.sample(letters+digits, 5))
 	os.makedirs(directory)
 	# Evolve population
-	rounds = 50
+	rounds = 20
 	for j in xrange(1,rounds+1):
 		pool = eonn.optimize(pool, cliff, epochs=EPOCHS, evals = EVALS)
 		print "AFTER EPOCH", j*EPOCHS
@@ -106,8 +117,83 @@ def main():
 	print "Done, everything saved in ", directory
 	
 
+def analysis():
+	policies = readPolicies()
+	
+	policyTypes = ["noWind", "littleWind", "muchWind"];
+	
+	for i in xrange(len(policyTypes)):
+		data = drawPolicyGrid(policies[i], policyTypes[i])
+		with open(gridPath + "/" +  policyTypes[i] + "/data.txt", 'w') as f:
+			f.write(policyTypes[i] + str(data))
+
+	print "Done!"
+ 
+
+def drawPolicyGrid(policies, policy_name):
+	
+	averageRet = 0
+	
+	# create grid
+	grid = []
+	for i in xrange(1, 10):
+		for j in xrange(1, 10):
+			grid.append([i, j])
+	
+	grid = np.array(grid)
+	grid = grid / float(10)
+	
+	# run and plot on grid
+	count = 0
+	for policy in policies:
+		ret = 0
+		l = []
+		for pos in grid:
+	
+			# standard episode
+			for i in range(max_steps):
+				action = policy.propagate(list(pos),t=1)
+				pos = update(pos, np.array(action))
+				l.append(list(pos))
+	
+				if checkGoal(pos):
+					ret += 1000
+					break
+	
+				if not checkBounds(pos):
+					ret -= 1000
+					break;
+		# plot run and save
+		draw(l)
+		plt.savefig(gridPath +  "/" + policy_name + "/" + str(count) + ".png")
+		plt.clf()
+		
+		# add count and return
+		count += 1
+		averageRet += ret
+	
+	return (averageRet / float(len(policies) * len(grid)))
+
+
+
+def readPolicies():
+	"""
+		Reads in policies from relative
+		path littleWindPath and muchWindPath
+	"""
+	policies = []
+	typePolicies = []
+	for ptype in ["noWind", "littleWindPath", "muchWindPath"]:
+	
+		for policy in os.walk(ptype).next()[1]:
+			org = Network(Genome.open(ptype + "/" + policy + "/best.net"))
+	
+			typePolicies.append(org)
+		policies.append(typePolicies)
+	
+	return policies
 
 if __name__ == '__main__':
-	for 1 in xrange(10):
-		main()
+	main()
+	# analysis()
 
