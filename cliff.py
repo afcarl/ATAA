@@ -21,7 +21,7 @@ XGOAL = 0.85
 YGOAL = 0.15
 GOALRADIUS = 0.03
 
-WINDCHANCE = 0.01
+WINDCHANCE = 0.15
 
 EPOCHS = 10
 EVALS = 5
@@ -32,7 +32,7 @@ def wind():
 def update(pos, action):
 	""" Updates position and velocity with given action. """
 	if(wind()):
-		pos += np.array([0,0.1])
+		pos += np.array([0,0.25])
 	return pos + (action * 0.2) 
 
 def checkBounds(pos):
