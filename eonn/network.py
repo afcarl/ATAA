@@ -50,7 +50,7 @@ class Neuron(object):
 	def activate(self):
 		""" Activates the neuron by summing all incoming connections. """
 		if self.pos != INPUT:
-			self.activation = 0
+			self.activation = self.bias
 			for synapse in self.synapses:
 				self.activation += synapse.output
 

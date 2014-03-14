@@ -68,12 +68,15 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 		pos = update(pos, np.array(action))
 		l.append(list(pos))
 		if checkGoal(pos):
-			ret = 0.9 ** i * 1000
+			ret = 0.99 ** i * 100
 			break
+		#Change returns to no longer focus on staying on the grid
 		if not checkBounds(pos):
-			ret = 0.9 ** i * -1000
+			# ret = 0.99 ** i * -1000
+			ret = 0
 			break;
-		ret = 0.9 ** i
+		# ret = 0.9 ** i
+		ret = 0
 	
 	if verbose:
 		draw(l)
@@ -127,22 +130,23 @@ def do_evolution(pi_pool, z_pool , GP):
 	
 	# Get rewards and MSE
 	reward_predict, MSE = GP.predict(x_predict, eval_MSE = True)
+	# for i in xrange(len(z_pool)):
+	# 	print reward_predict[i], MSE[i], 
 	
 	return pi_pool, z_pool, x_predict, reward_predict, MSE
 
 def add_scores(pi_pool, z_pool, x_predict, score_vector):
-		"""
-			Add the scores from the score_vector to the organisms in the pools
-		"""
-		# Append the scores to the evaluations of the organisms
-		for i,score in enumerate(score_vector):
-			
-			# Get the organisms from the pools
-			pi_org = pi_pool.find(x_predict[i][:-2])
-			z_org = z_pool.find(x_predict[i][-2:])
-			
-			pi_org.evals.append(score)
-			z_org.evals.append(score)
+	"""
+		Add the scores from the score_vector to the organisms in the pools
+	"""
+	# Append the scores to the evaluations of the organisms
+	for i,score in enumerate(score_vector):
+		# Get the organisms from the pools
+		pi_org = pi_pool.find(x_predict[i][:-2])
+		z_org = z_pool.find(x_predict[i][-2:])
+		
+		pi_org.evals.append(score)
+		z_org.evals.append(score)
 
 def acquisition(GP, epochs):
 	"""
@@ -152,8 +156,8 @@ def acquisition(GP, epochs):
 	# Create a pool for the policies
 	pi_pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),20,std = 8)
 	
-	# Create a pool of z's, starting around [0.5,0.5], should probably be better
-	z_list = list(itertools.product(np.arange(0.1,1,1/5),np.arange(0.1,1,1/4)))
+	# Create a pool of z's
+	z_list = list(itertools.product(np.arange(0.1,1,0.2),np.arange(0.1,1,0.25)))
 	genomes = BasicGenome.from_list(z_list, 20)
 	org_list = [Organism(genome) for genome in genomes]
 	z_pool  = Pool(org_list)
@@ -167,6 +171,7 @@ def acquisition(GP, epochs):
 	
 	# Get the current best combination (pi,z) and return the organisms for those
 	sorted_reward = np.argsort(score_vector)
+
 	best_combination = x_predict[sorted_reward[-1]]
 	
 	pi_org = pi_pool.find(best_combination[:-2])
@@ -195,7 +200,7 @@ def initGP():
 	
 	#Maybe use other kernel?
 	
-	GP = GaussianProcess(regr = 'quadratic', corr = 'squared_exponential')
+	GP = GaussianProcess(theta0=0.1, thetaL=.001, thetaU=1.)
 	GP.fit(X,y)
 	
 	return GP,X,y
