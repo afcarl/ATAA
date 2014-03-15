@@ -32,7 +32,7 @@ XGOAL = 0.85
 YGOAL = 0.15
 GOALRADIUS = 0.03
 
-WINDCHANCE = 0.0
+WINDCHANCE = 0.000
 WINDSTRENGTH = 0.2
 
 EPOCHS = 10
@@ -123,15 +123,17 @@ def analysis():
 	policyTypes = ["noWind", "littleWind", "muchWind"];
 	
 	for i in xrange(len(policyTypes)):
-		data = drawPolicyGrid(policies[i], policyTypes[i])
+		data = analysePolicies(policies[i], policyTypes[i])
 		with open(gridPath + "/" +  policyTypes[i] + "/data.txt", 'w') as f:
 			f.write(policyTypes[i] + str(data))
-
+	
 	print "Done!"
  
-
-def drawPolicyGrid(policies, policy_name):
+def analysePolicies(policies, policy_name):
 	
+	# data to return
+	nrDeaths = 0
+	nrSuccess = 0
 	averageRet = 0
 	
 	# create grid
@@ -157,10 +159,12 @@ def drawPolicyGrid(policies, policy_name):
 				l.append(list(pos))
 	
 				if checkGoal(pos):
+					nrSuccess += 1
 					ret += 1000
 					break
 	
 				if not checkBounds(pos):
+					nrDeaths += 1
 					ret -= 1000
 					break;
 		# plot run and save
@@ -172,9 +176,8 @@ def drawPolicyGrid(policies, policy_name):
 		count += 1
 		averageRet += ret
 	
-	return (averageRet / float(len(policies) * len(grid)))
-
-
+	averageRet /= float(len(policies) * len(grid))
+	return "Average return: " + str(averageRet) + "\nDeath count: " + str(nrDeaths) + "\nSucces count: " + str(nrSuccess) 
 
 def readPolicies():
 	"""
@@ -182,9 +185,9 @@ def readPolicies():
 		path littleWindPath and muchWindPath
 	"""
 	policies = []
-	typePolicies = []
-	for ptype in ["noWind", "littleWindPath", "muchWindPath"]:
+	for ptype in [noWindPath, littleWindPath, muchWindPath]:
 	
+		typePolicies = []
 		for policy in os.walk(ptype).next()[1]:
 			org = Network(Genome.open(ptype + "/" + policy + "/best.net"))
 	
@@ -194,6 +197,7 @@ def readPolicies():
 	return policies
 
 if __name__ == '__main__':
-	main()
-	# analysis()
+	 for i in xrange(10):
+		 main()
+	#analysis()
 
