@@ -34,6 +34,9 @@ WINDSTRENGTH = [0,0]
  
 NN_STRUCTURE_FILE = 'noHidden.net'
 
+EPOCHS = 10
+EVALS = 5
+
 def wind():
 	return rand.random() < WINDCHANCE
 
@@ -89,32 +92,9 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 	return ret
 	
 
-def cliff(policy, max_steps=500, verbose = False):
-	""" Cliff evaluation function. """
-	ret = 0
-	pos = np.random.rand(1,2)[0]
-	l = [pos]
-	for i in range(max_steps):
-		action = policy.propagate(list(pos),t=1)
-		pos = update(pos, np.array(action))
-		ret -= 0
-		if verbose:
-			l.append(list(pos))
-		if checkGoal(pos):
-			ret += 1000
-			break
-		if not checkBounds(pos):
-			ret -= 1000
-			break;
-	if verbose:
-		draw(l)
-	return ret
-
-
-""" old main
 def main():
 	""" Main function. """
-	pool = Pool.spawn(Genome.open('cliff.net'), 20, std=1)
+	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE), 20, std=1)
 	
 	# Set evolutionary parameters
 	eonn.samplesize	 = 5			# Sample size used for tournament selection
@@ -142,7 +122,6 @@ def main():
 	with open(directory+'/best.net', 'w') as f:
 		f.write('%s' % champion.genome)
 	print "Done, everything saved in ", directory
-"""
 
 def analysis():
 	policies = readPolicies()
@@ -224,7 +203,7 @@ def readPolicies():
 	return policies
 
 if __name__ == '__main__':
-	 #for i in xrange(10):
-		 #main()
-	analysis()
+	 for i in xrange(10):
+		 main()
+	#analysis()
 
