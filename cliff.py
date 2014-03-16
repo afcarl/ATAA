@@ -29,16 +29,12 @@ RIGHT = 1
 GOAL = np.array([0.85,0.15])
 GOALRADIUS = 0.15
 
-WINDCHANCE = 0.01
 WINDSTRENGTH = [0,0]
  
 NN_STRUCTURE_FILE = 'noHidden.net'
 
 EPOCHS = 10
 EVALS = 5
-
-def wind():
-	return rand.random() < WINDCHANCE
 
 def update(pos, action):
 	""" Updates position with given action. """
