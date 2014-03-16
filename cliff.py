@@ -23,12 +23,12 @@ LEFT = 0
 RIGHT = 1
 
 GOAL = np.array([0.85,0.15])
-GOALRADIUS = 0.15
+GOALRADIUS = 0.05
 
 WINDCHANCE = 0.01
 WINDSTRENGTH = [0,-0.2]
  
-NN_STRUCTURE_FILE = 'noHidden.net'
+NN_STRUCTURE_FILE = 'cliff.net'
 
 def wind():
 	return rand.random() < WINDCHANCE
@@ -113,9 +113,10 @@ def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
 	if MSE.max() > 0:
 		MSE /= MSE.max()
 
-	z_pi_score = 5 * np.ravel(mean_pi.dot(var_z))
+	z_pi_score = np.ravel(mean_pi.dot(var_z))
 	
-	return 1.96 * MSE + z_pi_score
+	# return MSE + np.ravel(mean_pi.dot(np.ones_like(var_z))) #z_pi_score
+	return MSE + z_pi_score
 
 def do_evolution(pi_pool, z_pool , GP):
 	"""
@@ -130,8 +131,6 @@ def do_evolution(pi_pool, z_pool , GP):
 	
 	# Get rewards and MSE
 	reward_predict, MSE = GP.predict(x_predict, eval_MSE = True)
-	# for i in xrange(len(z_pool)):
-	# 	print reward_predict[i], MSE[i], 
 	
 	return pi_pool, z_pool, x_predict, reward_predict, MSE
 
@@ -234,12 +233,16 @@ def find_best(GP):
 
 def main():
 	""" Main function. """
+
+	epochs = 200
 	np.set_printoptions(precision=3)
+	z_list = [[] for x in xrange(epochs-1)]
 	GP,X,y = initGP()
-	
-	for i in xrange(1,500):
-		pi_org, z_org = acquisition(GP, int(math.sqrt(i)) * 5)
+	for i in xrange(1,epochs):
+		pi_org, z_org = acquisition(GP, (int(math.sqrt(i))+10) * 5)
+
 		z = z_org.weights
+		z_list[i-1] = z
 		
 		reward = cliff(pi_org.genome, z)
 		print "Evaluation:\t", "%d\t" % i, "Return:\t", "%.1f\t" % reward, np.array(z)
@@ -253,6 +256,12 @@ def main():
 		r.append(cliff(champion.genome, verbose = True))
 	print sum(r)/len(r)
 	plt.show()
+
+	x = [s[0] for s in z_list]
+	y = [s[1] for s in z_list]
+	plt.scatter(x,y, marker = 'x')
+	plt.show()
+	plt.close()
 
 if __name__ == '__main__':
 	main()
