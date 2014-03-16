@@ -1,4 +1,4 @@
-import sys
+import sys 
 from eonn import eonn
 from eonn.genome import Genome
 from eonn.organism import Pool
@@ -15,12 +15,13 @@ import os
 # load paths
 max_steps = 500
 
-noWindPath = "pure-evolution result/noWind"
-littleWindPath = "pure-evolution result/littleWind"
-muchWindPath = "pure-evolution result/muchWind"
+regularPolicies = "newProb/regularPolicies"
+rarePolicies = "newProb/rarePolicies"
+GPSmartPolicies = "newProb/GPSmartPolicies"
+GPExtremePolicies = "newProb/GPExtremePolicies"
 
 # save paths
-gridPath = "analysisNoWind"
+analysisPath = "newProbAnalysis"
 
 # State limits
 LEFT = 0
@@ -33,8 +34,9 @@ WINDSTRENGTH = [0,0]
  
 NN_STRUCTURE_FILE = 'noHidden.net'
 
-EPOCHS = 10
+EPOCHS = 20
 EVALS = 5
+ROUNDS = 10
 
 def update(pos, action):
 	""" Updates position with given action. """
@@ -64,7 +66,11 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 	no_wind_yet = False
 	policy = genome
 	if z == None:
-		z = [np.random.uniform(0,0.5)]
+		if np.random.uniform(0, 1) > 0.5:
+			z = [0.5]
+		else:
+			z = [0]
+
 	WINDSTRENGTH[1] = -z[0]
 	pos = [0.1,0.1]
 	l = [pos]
@@ -104,8 +110,7 @@ def main():
 	directory = "pics/"+''.join(rand.sample(letters+digits, 5))
 	os.makedirs(directory)
 	# Evolve population
-	rounds = 20
-	for j in xrange(1,rounds+1):
+	for j in xrange(1,ROUNDS+1):
 		pool = eonn.optimize(pool, cliff, epochs=EPOCHS, evals = EVALS)
 		print "AFTER EPOCH", j*EPOCHS
 		print "average fitness %.1f" % pool.fitness
@@ -122,11 +127,11 @@ def main():
 def analysis():
 	policies = readPolicies()
 	
-	policyTypes = ["noWind", "littleWind", "muchWind"];
+	policyTypes = ["regularPolicies", "rarePolicies", "GPSmartPolicies", "GPExtremePolicies"];
 	
 	for i in xrange(len(policyTypes)):
 		data = analysePolicies(policies[i], policyTypes[i])
-		with open(gridPath + "/" +  policyTypes[i] + "/data.txt", 'w') as f:
+		with open(analysisPath + "/" +  policyTypes[i] + "/data.txt", 'w') as f:
 			f.write(policyTypes[i] + str(data))
 	
 	print "Done!"
@@ -138,47 +143,44 @@ def analysePolicies(policies, policy_name):
 	nrSuccess = 0
 	averageRet = 0
 	
-	# create grid
-	grid = []
-	for i in xrange(1, 10):
-		for j in xrange(1, 10):
-			grid.append([i, j])
-	
-	grid = np.array(grid)
-	grid = grid / float(10)
-	
+
 	# run and plot on grid
 	count = 0
 	for policy in policies:
+
 		ret = 0
-		l = []
-		for pos in grid:
-	
-			# standard episode
-			for i in range(max_steps):
-				action = policy.propagate(list(pos),t=1)
-				pos = update(pos, np.array(action))
-				l.append(list(pos))
-	
-				if checkGoal(pos):
-					nrSuccess += 1
-					ret += 1000
-					break
-	
-				if not checkBounds(pos):
-					nrDeaths += 1
-					ret -= 1000
-					break;
+
+		no_wind_yet = False
+		z = [np.random.uniform(0,0.5)]
+		WINDSTRENGTH[1] = -z[0]
+		pos = [0.1,0.1]
+		l = [pos]
+		ret = 0
+		for i in range(max_steps+1):
+			action = policy.propagate(list(pos),t=1)
+			pos = update(pos, np.array(action))
+			l.append(list(pos))
+			if checkGoal(pos):
+				ret = 0.99 ** i * 100
+				nrSuccess += 1
+				break
+			if not no_wind_yet and pos[0] > 0.5:
+				pos = gust_of_wind(pos)
+				no_wind_yet = True
+			if not checkBounds(pos):
+				nrDeaths += 1
+				break;
+		
 		# plot run and save
 		draw(l)
-		plt.savefig(gridPath +  "/" + policy_name + "/" + str(count) + ".png")
+		plt.savefig(analysisPath +  "/" + policy_name + "/" + str(count) + ".png")
 		plt.clf()
 		
 		# add count and return
 		count += 1
 		averageRet += ret
 	
-	averageRet /= float(len(policies) * len(grid))
+	averageRet /= float(len(policies))
 	return "Average return: " + str(averageRet) + "\nDeath count: " + str(nrDeaths) + "\nSucces count: " + str(nrSuccess) 
 
 def readPolicies():
@@ -187,7 +189,7 @@ def readPolicies():
 		path littleWindPath and muchWindPath
 	"""
 	policies = []
-	for ptype in [noWindPath, littleWindPath, muchWindPath]:
+	for ptype in [regularPolicies, rarePolicies, GPSmartPolicies, GPExtremePolicies]:
 	
 		typePolicies = []
 		for policy in os.walk(ptype).next()[1]:
@@ -199,7 +201,7 @@ def readPolicies():
 	return policies
 
 if __name__ == '__main__':
-	 for i in xrange(10):
-		 main()
-	 #analysis()
+	 #for i in xrange(10):
+		 #main()
+	analysis()
 
