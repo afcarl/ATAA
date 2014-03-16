@@ -20,7 +20,7 @@ littleWindPath = "pure-evolution result/littleWind"
 muchWindPath = "pure-evolution result/muchWind"
 
 # save paths
-gridPath = "gridImages"
+gridPath = "analysisNoWind"
 
 # State limits
 XMIN =	0
@@ -32,7 +32,7 @@ XGOAL = 0.85
 YGOAL = 0.15
 GOALRADIUS = 0.03
 
-WINDCHANCE = 0.000
+WINDCHANCE = 0.0
 WINDSTRENGTH = 0.2
 
 EPOCHS = 10
@@ -197,7 +197,7 @@ def readPolicies():
 	return policies
 
 if __name__ == '__main__':
-	 for i in xrange(10):
-		 main()
-	#analysis()
+	 #for i in xrange(10):
+		 #main()
+	analysis()
 
