@@ -23,44 +23,70 @@ muchWindPath = "pure-evolution result/muchWind"
 gridPath = "analysisNoWind"
 
 # State limits
-XMIN =	0
-XMAX =	1
-YMIN =	0
-YMAX =	1
+LEFT = 0
+RIGHT = 1
 
-XGOAL = 0.85
-YGOAL = 0.15
-GOALRADIUS = 0.03
+GOAL = np.array([0.85,0.15])
+GOALRADIUS = 0.15
 
-WINDCHANCE = 0.0
-WINDSTRENGTH = 0.2
-
-EPOCHS = 10
-EVALS = 5
+WINDCHANCE = 0.01
+WINDSTRENGTH = [0,0]
+ 
+NN_STRUCTURE_FILE = 'noHidden.net'
 
 def wind():
 	return rand.random() < WINDCHANCE
 
 def update(pos, action):
-	""" Updates position and velocity with given action. """
-	if(wind()):
-		pos += np.array([0,WINDSTRENGTH])
-	return pos + (action * 0.2) 
+	""" Updates position with given action. """
+	return pos + (action * 0.01) 
+
+def gust_of_wind(pos):
+	return pos + np.array(WINDSTRENGTH)
 
 def checkBounds(pos):
-	return pos[0] < XMAX and pos[0] > XMIN and pos[1] < YMAX and pos[1] > YMIN
+	return (pos < RIGHT).all() and (pos > LEFT).all()
 	
 def checkGoal(pos):
-	x = pos[0] < XGOAL + GOALRADIUS and pos[0] > XGOAL - GOALRADIUS
-	y = pos[1] < YGOAL + GOALRADIUS and pos[1] > YGOAL - GOALRADIUS
-	return x and y
+	dist = np.linalg.norm(pos-GOAL).sum()
+	return dist < GOALRADIUS
 
 def draw(l):
 	x = [s[0] for s in l]
 	y = [s[1] for s in l]
-	plt.scatter(x,y)
+	plt.scatter(x,y, marker = 'x')
+	plt.plot([GOAL[0]],[GOAL[1]], 'ro')
 	plt.xlim([0,1])
 	plt.ylim([0,1])
+	
+
+def cliff(genome, z = None, max_steps=500, verbose = False):
+	""" Cliff evaluation function. """
+	no_wind_yet = True
+	policy = Network(genome)
+	if not z:
+		z = [np.random.uniform(0,0.5)]
+	WINDSTRENGTH[1] = -z[0]
+	pos = [0.1,0.1]
+	l = [pos]
+	ret = 0
+	for i in range(max_steps+1):
+		action = policy.propagate(list(pos),t=1)
+		pos = update(pos, np.array(action))
+		l.append(list(pos))
+		if checkGoal(pos):
+			ret = 0.99 ** i * 100
+			break
+		if no_wind_yet and pos[0] > 0.5:
+			pos = gust_of_wind(pos)
+			no_wind_yet = False
+		if not checkBounds(pos):
+			break;
+		ret = 0
+	
+	if verbose:
+		draw(l)
+	return ret
 	
 
 def cliff(policy, max_steps=500, verbose = False):
@@ -85,6 +111,7 @@ def cliff(policy, max_steps=500, verbose = False):
 	return ret
 
 
+""" old main
 def main():
 	""" Main function. """
 	pool = Pool.spawn(Genome.open('cliff.net'), 20, std=1)
@@ -115,7 +142,7 @@ def main():
 	with open(directory+'/best.net', 'w') as f:
 		f.write('%s' % champion.genome)
 	print "Done, everything saved in ", directory
-	
+"""
 
 def analysis():
 	policies = readPolicies()
