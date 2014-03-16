@@ -42,7 +42,7 @@ def wind():
 
 def update(pos, action):
 	""" Updates position with given action. """
-	return pos + (action * 0.01) 
+	return pos + (action * 0.05) 
 
 def gust_of_wind(pos):
 	return pos + np.array(WINDSTRENGTH)
@@ -65,9 +65,9 @@ def draw(l):
 
 def cliff(genome, z = None, max_steps=500, verbose = False):
 	""" Cliff evaluation function. """
-	no_wind_yet = True
-	policy = Network(genome)
-	if not z:
+	no_wind_yet = False
+	policy = genome
+	if z == None:
 		z = [np.random.uniform(0,0.5)]
 	WINDSTRENGTH[1] = -z[0]
 	pos = [0.1,0.1]
@@ -80,9 +80,9 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 		if checkGoal(pos):
 			ret = 0.99 ** i * 100
 			break
-		if no_wind_yet and pos[0] > 0.5:
+		if not no_wind_yet and pos[0] > 0.5:
 			pos = gust_of_wind(pos)
-			no_wind_yet = False
+			no_wind_yet = True
 		if not checkBounds(pos):
 			break;
 		ret = 0
@@ -205,5 +205,5 @@ def readPolicies():
 if __name__ == '__main__':
 	 for i in xrange(10):
 		 main()
-	#analysis()
+	 #analysis()
 
