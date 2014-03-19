@@ -119,6 +119,47 @@ def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
 	
 	return 1.96 * MSE + z_pi_score
 
+def score_pi(reward_predict, MSE, pi_amount, z_amount):
+	"""
+	Returns a reward for each z. Assumes a certain ordering in 
+	the scores of reward_predict
+	"""
+
+	# make sure for each pi*z pair a reward is provided
+	assert((pi_amount * z_amount) == len(reward_predict))
+
+	# reshape results to grid
+	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
+
+	mean_pi = np.mean(reward_predictGrid, axis=1)
+
+	mean_pi -= mean_pi.min()
+	if mean_pi.max() > 0:
+		mean_pi /= mean_pi.max()
+
+	return mean_pi
+
+def score_z(reward_predict, MSE, pi_amount, z_amount):
+	"""
+	Returns a reward for each z. Assumes a certain ordering in 
+	the scores of reward_predict.
+	"""
+
+	# make sure for  each pi*z pair a reward is provided
+	assert((pi_amount * z_amount) == len(reward_predict))
+
+	# reshape results to grid
+	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
+
+	# get variance of Z over pi and reshape to score per pi-z pair
+	var_z = np.var(reward_predictGrid, axis=0)
+
+	var_z -= var_z.min()
+	if var_z.max() > 0:
+		var_z /= var_z.max()
+
+	return var_z
+
 def do_evolution(pi_pool, z_pool , GP):
 	"""
 		Evolve the organisms and predict their values according to the GP
@@ -135,19 +176,43 @@ def do_evolution(pi_pool, z_pool , GP):
 	
 	return pi_pool, z_pool, x_predict, reward_predict, MSE
 
-def add_scores(pi_pool, z_pool, x_predict, score_vector):
-		"""
-			Add the scores from the score_vector to the organisms in the pools
-		"""
-		# Append the scores to the evaluations of the organisms
-		for i,score in enumerate(score_vector):
-			
-			# Get the organisms from the pools
-			pi_org = pi_pool.find(x_predict[i][:-1])
-			z_org = z_pool.find(x_predict[i][-1:])
-			
-			pi_org.evals.append(score)
-			z_org.evals.append(score)
+def add_z_scores(z_pool, x_predict, z_score):
+	"""
+	Adds the z_score of each z to the z organism
+	in the pool. Uses x_predict to find the correct organism
+	"""
+
+	# make sure for exactly each z a score is given
+	assert(len(z_pool) == len(z_score));
+	# make sure the ordering assumed is correct 
+	# z of 0th element and len(z)th element should be same
+	assert((x_predict[0][-1:] == x_predict[len(z_score)][-1:]).all())
+
+	for i,score in enumerate(z_score):
+		# Get the z organism from the pool
+		z_org = z_pool.find(x_predict[i][-1:])
+		z_org.evals.append(score)
+
+
+def add_pi_scores(pi_pool, x_predict, pi_score):
+	"""
+	Adds the pi_score of each pi to the pi organism
+	in the pool. Uses x_predict to find the correct organism
+	"""
+
+	# make sure for exactly each pi a score is given
+	assert(len(pi_pool) == len(pi_score));
+	# make sure the ordering assumed is correct 
+	# pi of 0th element and 1st element should be same (up to len(z)-1 element)
+	assert((x_predict[0][:-1] == x_predict[1][:-1]).all())
+
+	z_amount = len(x_predict) // len(pi_pool)
+
+	for i,score in enumerate(pi_score):
+		# Get the organisms from the pools, where i*z_amount is the ith pi
+		pi_org = pi_pool.find(x_predict[i * z_amount][:-1])
+		
+		pi_org.evals.append(score)
 
 def acquisition(GP, epochs):
 	"""
@@ -165,18 +230,27 @@ def acquisition(GP, epochs):
 
 	for _ in xrange(epochs):
 		pi_pool, z_pool, x_predict, reward_predict, MSE = do_evolution(pi_pool, z_pool, GP)
-		# Get the scores according to the score function
 
-		score_vector = score_function(x_predict, reward_predict, MSE, len(pi_pool), len(z_pool))
-		add_scores(pi_pool, z_pool, x_predict, score_vector)
+		# get scores
+		pi_score = score_pi(reward_predict, MSE, len(pi_pool), len(z_pool))
+		z_score = score_z(reward_predict, MSE, len(pi_pool), len(z_pool))
+
+		# add scores to organisms
+
+		add_pi_scores(pi_pool, x_predict, pi_score)
+		add_z_scores(z_pool, x_predict, z_score)
+
+	# return current best pi and z
+	sorted_pi = np.argsort(pi_score)
+	sorted_z = np.argsort(z_score)
 	
-	# Get the current best combination (pi,z) and return the organisms for those
-	sorted_reward = np.argsort(score_vector)
-	best_combination = x_predict[sorted_reward[-1]]
-	
-	pi_org = pi_pool.find(best_combination[:-1])
-	z_org = z_pool.find(best_combination[-1:])
-	
+
+	pi_weights = x_predict[sorted_pi[-1]][:-1]
+	z_weights = x_predict[sorted_pi[-1] * len(z_pool)][-1:]
+
+	pi_org = pi_pool.find(pi_weights)
+	z_org = z_pool.find(z_weights)
+
 	return pi_org, z_org
 	
 def initGP():
@@ -237,7 +311,7 @@ def main():
 	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
 	
-	for i in xrange(1,2):
+	for i in xrange(1,200):
 		pi_org, z_org = acquisition(GP, int(math.sqrt(i)) * 5 + 10)
 		z = z_org.weights
 		
