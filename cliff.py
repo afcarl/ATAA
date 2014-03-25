@@ -101,7 +101,7 @@ def score_pi(reward_predictGrid, ub_predictGrid):
 	return mean_pi
 
 
-def score_z(reward_predictGrid, MSE_predictGrid):
+def score_z(reward_predictGrid, ub_predictGrid):
 	"""
 	Returns a reward for each z. Assumes a certain ordering in 
 	the scores of reward_predict.
