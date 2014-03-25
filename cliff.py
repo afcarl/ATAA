@@ -84,40 +84,6 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 		draw(l)
 	return ret
 	
-def score_function(x_predict,reward_predict,MSE, pi_amount, z_amount):
-	"""
-		Score function for selecting (pi,z)
-		Returns a matrix of dimension len(reward_predict)*
-		A score for pi and z for every row in x_predict and corresponding reward_predict
-	"""
-
-	# reshape results to grid
-	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
-
-	# get variance of Z over pi and reshape to score per pi-z pair
-	var_z = np.var(reward_predictGrid, axis=0, keepdims=True)
-
-	var_z -= var_z.min()
-	if var_z.max() > 0:
-		var_z /= var_z.max()
-
-	# var_z *= weight_controllability_score
-	
-		
-	# get mean of pi over Z and reshape to score per pi-z pair
-	mean_pi = np.mean(reward_predictGrid, axis=1, keepdims=True)
-
-	mean_pi -= mean_pi.min()
-	if mean_pi.max() > 0:
-		mean_pi /= mean_pi.max()
-
-	MSE -= MSE.min()
-	if MSE.max() > 0:
-		MSE /= MSE.max()
-
-	z_pi_score = 5 * np.ravel(mean_pi.dot(var_z))
-	
-	return 1.96 * MSE + z_pi_score
 
 def score_pi(reward_predict, MSE, pi_amount, z_amount):
 	"""
@@ -125,9 +91,8 @@ def score_pi(reward_predict, MSE, pi_amount, z_amount):
 	the scores of reward_predict
 	"""
 
-	# make sure for each pi*z pair a reward is provided
-	assert((pi_amount * z_amount) == len(reward_predict))
-
+	#ADD MSE TO SCORE
+	
 	# reshape results to grid
 	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
 
@@ -144,9 +109,6 @@ def score_z(reward_predict, MSE, pi_amount, z_amount):
 	Returns a reward for each z. Assumes a certain ordering in 
 	the scores of reward_predict.
 	"""
-
-	# make sure for  each pi*z pair a reward is provided
-	assert((pi_amount * z_amount) == len(reward_predict))
 
 	# reshape results to grid
 	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
