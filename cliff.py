@@ -23,7 +23,7 @@ LEFT = 0
 RIGHT = 1
 
 GOAL = np.array([0.85,0.15])
-GOALRADIUS = 0.05
+GOALRADIUS = 0.15
 
 WINDCHANCE = 0.01
 WINDSTRENGTH = [0,0]
@@ -58,7 +58,7 @@ def draw(l):
 
 def cliff(genome, z = None, max_steps=500, verbose = False):
 	""" Cliff evaluation function. """
-	no_wind_yet = False
+	no_wind_yet = True
 	policy = Network(genome)
 	if not z:
 		z = [np.random.uniform(0,0.5)]
@@ -75,7 +75,7 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 			break
 		if no_wind_yet and pos[0] > 0.5:
 			pos = gust_of_wind(pos)
-			no_wind_yet = True
+			no_wind_yet = False
 		if not checkBounds(pos):
 			break;
 		ret = 0
@@ -91,14 +91,16 @@ def score_pi(reward_predict, MSE, pi_amount, z_amount):
 	the scores of reward_predict
 	"""
 
-	#ADD MSE TO SCORE
 	
+	sd = np.sqrt(MSE)
+
+	reward_predict += 1.96 * sd
+
 	# reshape results to grid
 	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
 
 	mean_pi = np.mean(reward_predictGrid, axis=1)
 
-	mean_pi -= mean_pi.min()
 	if mean_pi.max() > 0:
 		mean_pi /= mean_pi.max()
 
@@ -117,7 +119,6 @@ def score_z(reward_predict, MSE, pi_amount, z_amount):
 	# get variance of Z over pi and reshape to score per pi-z pair
 	var_z = np.var(reward_predictGrid, axis=0)
 
-	var_z -= var_z.min()
 	if var_z.max() > 0:
 		var_z /= var_z.max()
 
@@ -278,14 +279,12 @@ def main():
 
 	epochs = 200
 	np.set_printoptions(precision=3)
-	z_list = [[] for x in xrange(epochs-1)]
 	GP,X,y = initGP()
 	for i in xrange(1,epochs):
 		pi_org, z_org = acquisition(GP, (int(math.sqrt(i))+10) * 5)
 
 
 		z = z_org.weights
-		z_list[i-1] = z
 		
 		reward = cliff(pi_org.genome, z)
 		print "Evaluation:\t", "%d\t" % i, "Return:\t", "%.1f\t" % reward, np.array(z)
@@ -300,11 +299,6 @@ def main():
 	print sum(r)/len(r)
 	plt.show()
 
-	x = [s[0] for s in z_list]
-	y = [s[1] for s in z_list]
-	plt.scatter(x,y, marker = 'x')
-	plt.show()
-	plt.close()
 
 if __name__ == '__main__':
 	main()
