@@ -77,27 +77,21 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 			pos = gust_of_wind(pos)
 			no_wind_yet = False
 		if not checkBounds(pos):
+			ret = - 0.99 ** i * 100
 			break;
-		ret = 0
 	
 	if verbose:
 		draw(l)
 	return ret
 	
 
-def score_pi(reward_predict, MSE, pi_amount, z_amount):
+def score_pi(reward_predictGrid, ub_predictGrid):
 	"""
 	Returns a reward for each z. Assumes a certain ordering in 
 	the scores of reward_predict
 	"""
 
-	
-	sd = np.sqrt(MSE)
-
-	reward_predict += 1.96 * sd
-
-	# reshape results to grid
-	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
+	reward_predictGrid += ub_predictGrid
 
 	mean_pi = np.mean(reward_predictGrid, axis=1)
 
@@ -107,18 +101,11 @@ def score_pi(reward_predict, MSE, pi_amount, z_amount):
 	return mean_pi
 
 
-def score_z(reward_predict, MSE, pi_amount, z_amount):
+def score_z(reward_predictGrid, ub_predictGrid):
 	"""
 	Returns a reward for each z. Assumes a certain ordering in 
 	the scores of reward_predict.
 	"""
-
-	sd = np.sqrt(MSE)
-
-	reward_predict += 1.96 * sd
-
-	# reshape results to grid
-	reward_predictGrid = np.reshape(reward_predict, (pi_amount, z_amount))
 
 	# get variance of Z over pi and reshape to score per pi-z pair
 	var_z = np.var(reward_predictGrid, axis=0)
@@ -203,8 +190,14 @@ def acquisition(GP, epochs):
 		pi_pool, z_pool, x_predict, reward_predict, MSE = do_evolution(pi_pool, z_pool, GP)
 
 		# get scores
-		pi_score = score_pi(reward_predict, MSE, len(pi_pool), len(z_pool))
-		z_score = score_z(reward_predict, MSE, len(pi_pool), len(z_pool))
+		reward_predictGrid = np.reshape(reward_predict, (len(pi_pool), len(z_pool)))
+
+		ub = 1.96 * np.sqrt(MSE)
+
+		ub_predictGrid = np.reshape(ub, (len(pi_pool), len(z_pool)))
+
+		pi_score = score_pi(reward_predictGrid, ub_predictGrid)
+		z_score = score_z(reward_predictGrid, ub_predictGrid)
 
 		# add scores to organisms
 
@@ -278,7 +271,7 @@ def find_best(GP):
 			pool[i].evals.append(reward[i*len(all_z):(i+1)*len(all_z)])
 
 		if n % 10 == 0:
-			print "Avg fitness:\t",n,"evaluations:\t", "%.1f" % pool.fitness
+			print "Avg fitness:",n,"evaluations:\t", "%.1f" % pool.fitness
 	champion = max(pool)
 	
 	return champion
