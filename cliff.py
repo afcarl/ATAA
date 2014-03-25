@@ -85,11 +85,13 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 	return ret
 	
 
-def score_pi(reward_predictGrid, MSE_predictGrid):
+def score_pi(reward_predictGrid, ub_predictGrid):
 	"""
 	Returns a reward for each z. Assumes a certain ordering in 
 	the scores of reward_predict
 	"""
+
+	reward_predictGrid += ub_predictGrid
 
 	mean_pi = np.mean(reward_predictGrid, axis=1)
 
@@ -204,29 +206,33 @@ def acquisition(GP, epochs):
 
 	
 	# return current best pi and z
-	sorted_pi = np.argsort(pi_score)
-	sorted_z = np.argsort(z_score)
-	
-
-	pi_weights = x_predict[sorted_pi[-1]][:-1]
-	z_weights = x_predict[sorted_pi[-1] * len(z_pool)][-1:]
-
-	pi_org = pi_pool.find(pi_weights)
-	z_org = z_pool.find(z_weights)
+	pi_org = max(pi_pool)
+	z_org = max(z_pool)
 
 	return pi_org, z_org
 	
 def initGP():
 	"""Do 2 simulations with random pi,z and create GP, X, y"""
-	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE), 68, std = 10)
+	poolsize = 68
+	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE), poolsize, std = 10)
 	X = []
 	for org in pool:
+
 		for gene in org.genome:
-			gene.mutate()
+				gene.mutate()
 		genome = org.genome
 		w = genome.weights
 		z = [np.random.uniform(0,0.5)]
 		reward = cliff(genome,z)
+
+		while reward == 0 and len(X) < poolsize/2:
+			for gene in org.genome:
+				gene.mutate()
+			genome = org.genome
+			w = genome.weights
+			z = [np.random.uniform(0,0.5)]
+			reward = cliff(genome,z)
+
 	
 		if not len(X):
 			X = np.atleast_2d(w+z)
@@ -257,11 +263,12 @@ def find_best(GP):
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
 	all_z = list(np.linspace(0, 0.5, 10))
 	for n in xrange(epochs):
-		pool = eonn.epoch(pool, len(pool))
+		if n != 0:
+			pool = eonn.epoch(pool, len(pool))
 		weights = [np.append(org.weights,z) for org in pool for z in all_z]
 		reward = GP.predict(weights)
 		for i in xrange(len(pool)):
-			pool[i].evals = reward[i*len(all_z):(i+1)*len(all_z)]
+			pool[i].evals.append(reward[i*len(all_z):(i+1)*len(all_z)])
 
 		if n % 10 == 0:
 			print "Avg fitness:",n,"evaluations:\t", "%.1f" % pool.fitness
