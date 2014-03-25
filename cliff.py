@@ -197,17 +197,19 @@ def acquisition(GP, epochs):
 	for _ in xrange(epochs):
 		pi_pool, z_pool, x_predict, reward_predict, MSE = do_evolution(pi_pool, z_pool, GP)
 
-		score_vector = score_function(x_predict, reward_predict, MSE, len(pi_pool), len(z_pool))
-		add_scores(pi_pool, z_pool, x_predict, score_vector)
-	
-	# Get the current best combination (pi,z) and return the organisms for those
-	sorted_reward = np.argsort(score_vector)
+		# get scores
+		pi_score = score_pi(reward_predict, MSE, len(pi_pool), len(z_pool))
+		z_score = score_z(reward_predict, MSE, len(pi_pool), len(z_pool))
 
-	best_combination = x_predict[sorted_reward[-1]]
-	
-	pi_org = pi_pool.find(best_combination[:-2])
-	z_org = z_pool.find(best_combination[-2:])
+		# add scores to organisms
 
+		add_pi_scores(pi_pool, x_predict, pi_score)
+		add_z_scores(z_pool, x_predict, z_score)
+
+	
+	# return current best pi and z
+	sorted_pi = np.argsort(pi_score)
+	sorted_z = np.argsort(z_score)
 	
 
 	pi_weights = x_predict[sorted_pi[-1]][:-1]
