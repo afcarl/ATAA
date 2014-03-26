@@ -256,7 +256,6 @@ def updateGP(GP,X,y,w,z,reward):
 
 
 def find_best(GP):
-	print "Finding the best policy"
 	
 	epochs = 100
 	
@@ -268,10 +267,46 @@ def find_best(GP):
 		weights = [np.append(org.weights,z) for org in pool for z in all_z]
 		reward = GP.predict(weights)
 		for i in xrange(len(pool)):
-			pool[i].evals.append(reward[i*len(all_z):(i+1)*len(all_z)])
+			pool[i].evals = list(reward[i*len(all_z):(i+1)*len(all_z)])
 
-		if n % 10 == 0:
-			print "Avg fitness:",n,"evaluations:\t", "%.1f" % pool.fitness
+	champion = max(pool)
+	
+	return champion
+
+def find_best_lower(GP):
+	
+	epochs = 100
+	
+	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
+	all_z = list(np.linspace(0, 0.5, 10))
+	for n in xrange(epochs):
+		if n != 0:
+			pool = eonn.epoch(pool, len(pool))
+		weights = [np.append(org.weights,z) for org in pool for z in all_z]
+		reward, MSE = GP.predict(weights, eval_MSE = True)
+		reward -= 1.96 *  np.sqrt(MSE)
+		for i in xrange(len(pool)):
+			pool[i].evals = list(reward[i*len(all_z):(i+1)*len(all_z)])
+
+	champion = max(pool)
+	
+	return champion
+
+def find_best_upper(GP):
+	
+	epochs = 100
+	
+	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
+	all_z = list(np.linspace(0, 0.5, 10))
+	for n in xrange(epochs):
+		if n != 0:
+			pool = eonn.epoch(pool, len(pool))
+		weights = [np.append(org.weights,z) for org in pool for z in all_z]
+		reward, MSE = GP.predict(weights, eval_MSE = True)
+		reward += 1.96 *  np.sqrt(MSE)
+		for i in xrange(len(pool)):
+			pool[i].evals = list(reward[i*len(all_z):(i+1)*len(all_z)])
+
 	champion = max(pool)
 	
 	return champion
@@ -279,24 +314,47 @@ def find_best(GP):
 def main():
 	""" Main function. """
 
-	epochs = 200
+	epochs = 50
 	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
-	for i in xrange(1,epochs):
-		pi_org, z_org = acquisition(GP, (int(math.sqrt(i))+10) * 5)
+	r_avg = np.empty(10)
+	r_lower = np.empty(10)
+	r_upper = np.empty(10)
+	for i in xrange(10):
+		for j in xrange(i*epochs, (i+1) * epochs):
+			pi_org, z_org = acquisition(GP, 100)
+			z = z_org.weights
+			reward = cliff(pi_org.genome, z)
+			print "Evaluation:\t", "%d\t" % (j+1), "Return:\t", "%.1f\t" % reward, np.array(z)
+			w = pi_org.genome.weights
+			GP,X,y = updateGP(GP,X,y,w,z,reward)
 
-
-		z = z_org.weights
+		champion_average = find_best(GP)
+		champion_lower = find_best_lower(GP)
+		champion_upper = find_best_upper(GP)
 		
-		reward = cliff(pi_org.genome, z)
-		print "Evaluation:\t", "%d\t" % i, "Return:\t", "%.1f\t" % reward, np.array(z)
+		r = np.empty(10)
 
-		w = pi_org.genome.weights
-		GP,X,y = updateGP(GP,X,y,w,z,reward)
-		
+		all_z = list(np.linspace(0, 0.5, 10))
+		for j,z in enumerate(all_z):
+			r[j] = cliff(champion_average.genome, z = [z])
+		r_avg[i] = np.average(r)
+		for j,z in enumerate(all_z):
+			r[j] = cliff(champion_lower.genome, z = [z])
+		r_lower[i] = np.average(r)
+		for j,z in enumerate(all_z):
+			r[j] = cliff(champion_upper.genome, z = [z])
+		r_upper[i] = np.average(r)
+	
+	plt.plot(r_avg,'r')
+	plt.plot(r_lower,'b')
+	plt.plot(r_upper,'g')
+	plt.show()
+
+
 	champion = find_best(GP)
 	r = []
-	for i in range(100):
+	for _ in range(100):
 		r.append(cliff(champion.genome, verbose = True))
 	print sum(r)/len(r)
 	plt.show()
