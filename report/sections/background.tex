@@ -2,13 +2,14 @@
 In this section a background on the theory involved in Bayesian Coevluation. It is divided into neural networks, gaussian processes and (co)evolution. Neural networks are shortly described as they are used them for policy representation. Gaussian processes is a key concept in our approach to maintain a believe over the fitness of policies and evolution is used as a means to do policy search. First, however, a definition for rare controllable events is provided.
 
 \subsection{Rare controllable events}
-Figure \ref{rareControllableImage} shows the rareness of an event and the performance of two policies on those events. Rare events are those of which the chance of occurring is very small, while controllability is defined as the influence of an agent is on the reward in that event. An event where there exists a policy that perform much better than an other policy is an event where the policy has a high influence on (with respect to the reward), and thus controllable. A rare controllable event is then an event which is both rare and controllable.
+Figure %\ref{rareControllableImage} 
+shows the rareness of an event and the performance of two policies on those events. Rare events are those of which the chance of occurring is very small, while controllability is defined as the influence of an agent is on the reward in that event. An event where there exists a policy that perform much better than an other policy is an event where the policy has a high influence on (with respect to the reward), and thus controllable. A rare controllable event is then an event which is both rare and controllable.
 
-\begin{figure}[h]
-  \centering
-  \includegraphics{images/rare-controllable.png}
-  \caption{Performance of two policies on a set of events, showing rare-, controllable- and rare controllable events}\label{rareControllableImage}
-\end{figure}
+% \begin{figure}[h]
+%   \centering
+%   \includegraphics{images/rare-controllable.png}
+%   \caption{Performance of two policies on a set of events, showing rare-, controllable- and rare controllable events}\label{rareControllableImage}
+% \end{figure}
 
 Controllable events are interesting because they are important to learn (as learning the correct policy in such an event is rewarding). Additionally, as rare events do not occur often, general reinforcement learning often does not consider them and thus the agent does not learn how to act in such a situation. As a direct consequence of the nature of rare controllable events, an agent often does not know how to act optimally in such events, while acting sub-optimal could result in a significantly lower reward.
 
