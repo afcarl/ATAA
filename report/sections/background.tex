@@ -1,17 +1,18 @@
 % intro
-In this section a background is given on the theory used in order to implement Bayesian co-evolution. It is divided into four parts, namely rare controllable events, neural networks, Gaussian processes and (co)evolution. Neural networks are shortly described as they are only used for policy representation, while Gaussian processes are more extensively explained as they are a key concept in our approach.
+In this section a background is given on the theory used in order to implement Bayesian co-evolution. It is divided into four parts, namely rare controllable events, neural networks, gaussian processes and (co)evolution. 
 
-\subsection{Rare controllable events}
+\subsection{Controllable rare events}
 %Kern is goed, maar moet wat strakker geformuleerd worden. Eventueel terminologie uit de presentatie gebruiken? 
-Figure \ref{rareControllableImage} shows the rareness of an event and the performance of two policies on those events. Rare events are those of which the chance of occurring is very small, while controllability is defined as the influence of an agent is on the reward in that event. An event where there exists a policy that performs much better than another policy is an event where the policy has a high influence on (with respect to the reward), and thus controllable. A rare controllable event is then an event which is both rare and controllable.
+% Dit nu goed (ik nam aan dat met presentatie de proposal was bedoeld)??
+Figure \ref{rareControllableImage} illustrates the concept of controllable rare events with two policies. Rare events are those of which the chance of occurring is very small (left on the x-axis), while an event is controllable when the choice of policy affects the performance greatly (the difference on y-axis of the policies per event). A controllable rare event is thus an event of which the probability of occurring is low while the chosen action significantly influences the reward.
 
-\begin{figure}[ht]
+\begin{figure}[h]
   \centering
   \includegraphics{images/rare-controllable.png}
   \caption{Performance of two policies on a set of events, showing rare-, controllable- and rare controllable events}\label{rareControllableImage}
 \end{figure}
 
-Controllable events are interesting because they are important to learn (as learning the correct policy in such an event is rewarding). Additionally, as rare events do not occur often, general reinforcement learning often does not consider them and thus the agent does not learn how to act in such a situation. As a direct consequence of the nature of rare controllable events, an agent often does not know how to act optimally in such events, while acting sub-optimal could result in a significantly lower reward.
+Coping properly with events that are both rare and controllable is vital because these events influence the performance of policies while difficult to discover: general approaches tend to ignore rare events. By explicitly focussing on controllable rare events, policies with seemingly equal performance are properly distinguished and the learning process accelerates.
 
 \subsection{Neural Networks}
 % meer in detail propagation uitleggen?
@@ -25,9 +26,22 @@ In the current setting, networks are used as policies. The current situation (st
 GP is used to maintain a believe over the fitness of policies and evolution is used as a means to do policy search.
 
 \subsection{(Co) evolution}
-% TODO
-In the process of creating a better believe of the fitness over the policies, a method is required to define new policies. 
+% Evolution
+Evolutionary algorithms aim to produce new entities based on a population and is inspired by biological evolution. Given a set of organisms, offspring is born by applying crossover and mutation operators: by combining the genes of the parents the new individuals exhibit similar, but slightly different, features. The selection of parents is based on an evaluation of the original set of organisms, and the better performing offspring replaces the least suited parents. 
 
+% co evolution 
+
+% evolution in our perspective
+In the process of creating a better believe of the fitness over the policies, a method is required to define new policies.
+
+% co evolution in our perspective
+
+\begin{itemize}
+  \item{Evolution}
+  \item{Co evolution}
+  \item{Evolution in our perspective}
+  \item{Co evolution in our perspective}
+\end{itemize}
 
 % outro
 In the following section (\ref{related}) the related work will be described, followed by our contribution (\ref{contrib}). We then describe the experiments (\ref{experiments}), discuss them and lastly conclude (\ref{conclusion}).
