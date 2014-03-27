@@ -1,7 +1,12 @@
 %related work to your problem
 
-\subsection{Co-evolutionary forgetting}
-In order to combat forgetting \cite{ficici2003game} proposes to use a 'Nash Memory' mechanism, based on the game-theoretic principles of the Nash Equilibrium. Their mechanism guarantees monotonic progress, meaning that every change to the policy moves it closer to the true solution. Unfortunately, it does not guarantee finding policies 
+%Do not use subsections, controllable rare events are covered by co-evolutionary programming
 
-\subsection{Co-evolutionary programming}
-13, 15, 16, 17, 64, 84
+%
+Whiteson and Koppejan have shown that it is possible to use co-evolution to focus the agent on learning controllable rare events. The problem is that in order to use co-evolution to focus on controllable rare events, it is necessary to combat co-evolutionary forgetting, where previously acquired useful traits are lost in future evolutions. In this section, we will entail what research has been done so far that tries to accomplish this.
+
+\cite{ficici2003game} propose to use a 'Nash Memory' mechanism, based on the game-theoretic principles of the Nash Equilibrium. This mechanism keeps track of important traits discovered during evolution and later uses this in forming a mixed policy. This guarantees monotonic progress, meaning that every change to the policy moves it closer to the true solution. Unfortunately, it does not guarantee finding policies of maximal value. In another paper by Ficici and Pollack, \cite{ficici2001pareto}, they propose to use pareto optimality to solve the problem of forgetting. In order to do this they treat the problem as a multi-objective optimization, which is unfortunately not possible in our setting.
+
+Recently, a paper by Wilson et al. \cite{wilson2014using} was published that is similar to the research done in this project; using Gaussian Processes and Bayesian optimization to speed up the learning process at the expense of more computation cost. They achieve promising results, similar to the state of the art, with substantially less iterations necessary.
+
+These recent works have made it plausible that combining co-evolution and GP-UCB techniques is a viable strategy. It also seems that this strategy has not been done before and is therefore worthy to pursue.
