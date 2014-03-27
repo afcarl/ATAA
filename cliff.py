@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 import random as rand
 import itertools
 import math
-
+import json
 from sklearn.gaussian_process import GaussianProcess
 
 try:
@@ -25,13 +25,9 @@ RIGHT = 1
 GOAL = np.array([0.85,0.15])
 GOALRADIUS = 0.15
 
-WINDCHANCE = 0.01
 WINDSTRENGTH = [0,0]
  
 NN_STRUCTURE_FILE = 'cliff.net'
-
-def wind():
-	return rand.random() < WINDCHANCE
 
 def update(pos, action):
 	""" Updates position with given action. """
@@ -107,8 +103,10 @@ def score_z(reward_predictGrid, ub_predictGrid):
 	the scores of reward_predict.
 	"""
 
+	reward_predictGrid += ub_predictGrid
+
 	# get variance of Z over pi and reshape to score per pi-z pair
-	var_z = np.var(reward_predictGrid, axis=0)
+	var_z = np.var(reward_predictGrid + ub_predictGrid, axis=0)
 
 	if var_z.max() > 0:
 		var_z /= var_z.max()
@@ -217,22 +215,20 @@ def initGP():
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE), poolsize, std = 10)
 	X = []
 	for org in pool:
-
-		for gene in org.genome:
-				gene.mutate()
+		org.mutate()
 		genome = org.genome
 		w = genome.weights
 		z = [np.random.uniform(0,0.5)]
 		reward = cliff(genome,z)
 
-		while reward == 0 and len(X) < poolsize/2:
+		while reward <= 0 and len(X) < poolsize/2:
 			for gene in org.genome:
 				gene.mutate()
+			org.mutate()
 			genome = org.genome
 			w = genome.weights
 			z = [np.random.uniform(0,0.5)]
 			reward = cliff(genome,z)
-
 	
 		if not len(X):
 			X = np.atleast_2d(w+z)
@@ -303,7 +299,7 @@ def find_best_upper(GP):
 			pool = eonn.epoch(pool, len(pool))
 		weights = [np.append(org.weights,z) for org in pool for z in all_z]
 		reward, MSE = GP.predict(weights, eval_MSE = True)
-		reward += 1.96 *  np.sqrt(MSE)
+		reward += 1.96 * np.sqrt(MSE)
 		for i in xrange(len(pool)):
 			pool[i].evals = list(reward[i*len(all_z):(i+1)*len(all_z)])
 
@@ -314,12 +310,15 @@ def find_best_upper(GP):
 def main():
 	""" Main function. """
 
-	epochs = 50
+	epochs = 20
 	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
 	r_avg = np.empty(10)
+	pred_avg = np.empty(10)
 	r_lower = np.empty(10)
+	pred_lower = np.empty(10)
 	r_upper = np.empty(10)
+	pred_upper = np.empty(10)
 	for i in xrange(10):
 		for j in xrange(i*epochs, (i+1) * epochs):
 			pi_org, z_org = acquisition(GP, 100)
@@ -345,12 +344,22 @@ def main():
 		for j,z in enumerate(all_z):
 			r[j] = cliff(champion_upper.genome, z = [z])
 		r_upper[i] = np.average(r)
+		pred_avg[i] = champion_average.fitness
+		pred_lower[i] = champion_lower.fitness
+		pred_upper[i] = champion_upper.fitness
 	
-	plt.plot(r_avg,'r')
-	plt.plot(r_lower,'b')
-	plt.plot(r_upper,'g')
+	plt.plot(r_avg)
+	plt.plot(pred_avg)
+	plt.plot(r_lower)
+	plt.plot(pred_lower)
+	plt.plot(r_upper)
+	plt.plot(pred_upper)
 	plt.show()
+	plt.clf()
 
+	data = {'r_avg' : list(r_avg), 'pred_avg' : list(pred_avg), 'r_lower' : list(r_lower), 'pred_lower' : list(pred_lower), 'r_upper' : list(r_upper), 'pred_upper' : list(pred_upper)}
+	with open('data.json','w') as w:
+		json.dump(data,w)
 
 	champion = find_best(GP)
 	r = []
