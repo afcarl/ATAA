@@ -25,13 +25,9 @@ RIGHT = 1
 GOAL = np.array([0.85,0.15])
 GOALRADIUS = 0.15
 
-WINDCHANCE = 0.01
 WINDSTRENGTH = [0,0]
  
 NN_STRUCTURE_FILE = 'cliff.net'
-
-def wind():
-	return rand.random() < WINDCHANCE
 
 def update(pos, action):
 	""" Updates position with given action. """
@@ -108,7 +104,7 @@ def score_z(reward_predictGrid, ub_predictGrid):
 	"""
 
 	# get variance of Z over pi and reshape to score per pi-z pair
-	var_z = np.var(reward_predictGrid, axis=0)
+	var_z = np.var(reward_predictGrid + ub_predictGrid, axis=0)
 
 	if var_z.max() > 0:
 		var_z /= var_z.max()
@@ -225,14 +221,13 @@ def initGP():
 		z = [np.random.uniform(0,0.5)]
 		reward = cliff(genome,z)
 
-		while reward == 0 and len(X) < poolsize/2:
+		while reward <= 0 and len(X) < poolsize/2:
 			for gene in org.genome:
 				gene.mutate()
 			genome = org.genome
 			w = genome.weights
 			z = [np.random.uniform(0,0.5)]
 			reward = cliff(genome,z)
-
 	
 		if not len(X):
 			X = np.atleast_2d(w+z)
