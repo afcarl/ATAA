@@ -6,7 +6,7 @@ In this section a background is given on the theory used in order to implement B
 % Dit nu goed (ik nam aan dat met presentatie de proposal was bedoeld)??
 Figure \ref{rareControllableImage} illustrates the concept of controllable rare events with two policies. Rare events are those of which the chance of occurring is very small (left on the x-axis), while an event is controllable when the choice of policy affects the performance greatly (the difference on y-axis of the policies per event). A controllable rare event is thus an event of which the probability of occurring is low while the chosen action significantly influences the reward.
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \includegraphics{images/rare-controllable.png}
   \caption{Performance of two policies on a set of events, showing rare-, controllable- and rare controllable events}\label{rareControllableImage}
@@ -32,13 +32,12 @@ In the process of creating a better believe of the fitness over the policies, a 
 % evolution
 Evolutionary algorithms aim to produce new entities based on a population and is inspired by biological evolution. Given a set of organisms, offspring is born by applying crossover and mutation operators, by combining the genes of the parents the new individuals exhibit similar, but slightly different, features. The selection of parents is based on an evaluation of the original set of organisms, and the better performing offspring replaces the least suited parents. 
 
-% evolution -> our context -> co-evolution
+% evolution -> our context finish
 % including bias?
 When applied to neural networks, the set of weights of the network represents one organism in the population. The weights are then evolved as described above.
 
 % co evolution 
 Co evolution is the act of evolving two populations while their evaluation depends on the other population. A classical example is in a prey-predator context. The fitness of an individual depends on its survivability (either ability to hunt prey or evade predators) and the more fit a parent is, the more likely it produces offspring. \\
-
 
 % outro
 In the following section (\ref{related}) the related work will be described, followed by our contribution (\ref{contrib}). We then describe the experiments (\ref{experiments}), discuss them and lastly conclude (\ref{conclusion}).
