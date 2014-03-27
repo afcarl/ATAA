@@ -1,6 +1,45 @@
+\subsection{Neural Network as Policy}
+
+As discussed, we use a neural network as our policy. The inputs of such a network are the state and the outputs are the (encoded) action. Finding an optimal policy can then be defined as finding the optimal network topology and optimal weights for that topology.\\
+This was also done by \ref{koppejan2011neuroevolutionary} in their approach to the helicopter control problem. Using a fixed, engineered network topology and finding good weights with evolutionary policy search was shown to produce better results than jointly optimizing the weights and the topology. Furthermore, a network with a single layer of weights performed far worse than an MLP. Therefore, we focus on optimizing weights for an MLP with a fixed topology.\\
+Specifically, %(activatiefuncie, aantal hidden, totaal aantal variabelen, blabla)
+
+\subsection{Baseline: Evolutionary Policy Search}
+
+In order to compare the performance of the GP-CEPS method, we used evolutionary programming to find good weights for the described Neural Network. 
+The evolutionary algorithm we employed uses tournament selection to select organisms to breed with. The pipeline of the algorithm is as follows:\\ \\
+Initialize: create $N_{pool}$ policies\\
+Repeat for $N_{epochs}$:
 \begin{itemize}
-  \item{Toy problem}
-  \item{Gaussian process}
-  \item{Neural networks as policies}
-  \item{Evolutionary approach for both optimization problems}
+\item Evaluate the policies on $F_{score}$
+\item Select best $N_{best}$ policies with tournament selection
+\item Breed a new pool of policies from these $N_{best}$ policies
+\item Mutate the policies
 \end{itemize}
+Evaluate the policies on $F_{score}$ in order to select the best policy.\\ \\
+
+We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $F_{score}$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
+A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \ref{koppejan2011neuroevolutionary}. Further parameters used are $Tournament Samplesize = 5$, $mutation probability = 0.75$, $mutation fraction = 0.2$,$mutation std = 1.0$, and $replacement probability = 0.2$. 
+
+\subsection{Gaussian Process Co-Evolutionary Policy Search}
+
+% explain how we use GP ceps in stead of baseline
+%link to related work! 
+
+\subsection{Toy Problem}
+
+In order to somewhat simplify the problem, we design a Toy Problem on which we can test the GP-CEPS method. This way, we can start out with a smaller network, do not have long simulations, and can avoid long runtimes. Hereafter, we scale up the problem such that it is, to some extent, comparable to the helicopter problem. Specifically, we want to have the same amount of parameters to define the GP over. This way, the rewards as a function of the space spanned by policies and outcomes is comparable to that space in the Helicopter Control Problem.\\
+%Do we need to describe earlier versions/iterations of the TP??
+After some ideas, improvements and iterations, the toy problem we ended up with is moving to a goal from a fixed starting position in a 2D plane. A one-time gust of wind with fixed direction, but varying strength is added when x-coordinate 0.5 is passed. The problem is further defined by:
+\begin{itemize}
+
+\item State: position in continuous x-y coordinates, each of which ranges between 0 and 1 while on the plane.
+\item Actions: change in position in continuous x-y coordinates, with a maximum step size of 0.01 in both directions. 
+\item This is an episodic task: the episode ends after the agent either reaches the goal state, or moves off the grid.
+\item Start state and goal state: The start state is (0.1,0.1) and the goal state is anywhere in the circle around (0.85, 0.85) with radius 0.15.
+\item Rewards: The agent receives +100 for reaching the goal state and -100 for moving off the grid. Rewards are discounted by a factor $\gamma =  0.99$.
+\item State transition: $s_t = s_{t-1} + a_t + w$, where wind w works in y-direction only, and %verdeling van windgrootte!!
+\end{itemize} 
+
+\subsection{Contribution}
+%how does this help science?--> information about GP proccess in such problems. Compare our results with expected results for heli problem. Include differences between probs or save for discussion?
