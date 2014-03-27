@@ -2,7 +2,7 @@
 
 %Do not use subsections, controllable rare events are covered by co-evolutionary programming
 
-%
+% I don't agree with the first sentence, they show it is doable to create a policy (using normal evolutionary programming) that works in 99% of the cases. Controllable rare events are never discussed there. Shimon also has no references to these events in his proposal
 Whiteson and Koppejan have shown that it is possible to use co-evolution to focus the agent on learning controllable rare events. The problem is that in order to use co-evolution to focus on controllable rare events, it is necessary to combat co-evolutionary forgetting, where previously acquired useful traits are lost in future evolutions. In this section, we will entail what research has been done so far that tries to accomplish this.
 
 \cite{ficici2003game} propose to use a 'Nash Memory' mechanism, based on the game-theoretic principles of the Nash Equilibrium. This mechanism keeps track of important traits discovered during evolution and later uses this in forming a mixed policy. This guarantees monotonic progress, meaning that every change to the policy moves it closer to the true solution. Unfortunately, it does not guarantee finding policies of maximal value. In another paper by Ficici and Pollack, \cite{ficici2001pareto}, they propose to use pareto optimality to solve the problem of forgetting. In order to do this they treat the problem as a multi-objective optimization, which is unfortunately not possible in our setting.
