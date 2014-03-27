@@ -26,6 +26,7 @@ GOAL = np.array([0.85,0.15])
 GOALRADIUS = 0.15
 
 WINDSTRENGTH = [0,0]
+max_wind = 0.5
  
 NN_STRUCTURE_FILE = 'cliff.net'
 
@@ -57,7 +58,7 @@ def cliff(genome, z = None, max_steps=500, verbose = False):
 	no_wind_yet = True
 	policy = Network(genome)
 	if not z:
-		z = [np.random.uniform(0,0.5)]
+		z = [np.random.uniform(0,max_wind)]
 	WINDSTRENGTH[1] = -z[0]
 	pos = [0.1,0.1]
 	l = [pos]
@@ -178,7 +179,7 @@ def acquisition(GP, epochs):
 	
 
 	# Create a pool of z's, starting around [0.5,0.5], should probably be better
-	z_list = list(itertools.product(np.arange(0,0.5,1./20)))
+	z_list = list(itertools.product(np.arange(0,max_wind,1./20)))
 
 	genomes = BasicGenome.from_list(z_list, 20)
 	org_list = [Organism(genome) for genome in genomes]
@@ -218,7 +219,7 @@ def initGP():
 		org.mutate()
 		genome = org.genome
 		w = genome.weights
-		z = [np.random.uniform(0,0.5)]
+		z = [np.random.uniform(0,max_wind)]
 		reward = cliff(genome,z)
 
 		while reward <= 0 and len(X) < poolsize/2:
@@ -227,7 +228,7 @@ def initGP():
 			org.mutate()
 			genome = org.genome
 			w = genome.weights
-			z = [np.random.uniform(0,0.5)]
+			z = [np.random.uniform(0,max_wind)]
 			reward = cliff(genome,z)
 	
 		if not len(X):
@@ -251,12 +252,10 @@ def updateGP(GP,X,y,w,z,reward):
 	return GP, X, y
 
 
-def find_best(GP):
-	
-	epochs = 100
-	
+def find_best(GP, epochs = 100):
+		
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
-	all_z = list(np.linspace(0, 0.5, 10))
+	all_z = list(np.linspace(0, max_wind, 10))
 	for n in xrange(epochs):
 		if n != 0:
 			pool = eonn.epoch(pool, len(pool))
@@ -269,12 +268,11 @@ def find_best(GP):
 	
 	return champion
 
-def find_best_lower(GP):
+def find_best_lower(GP, epochs = 100):
 	
-	epochs = 100
 	
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
-	all_z = list(np.linspace(0, 0.5, 10))
+	all_z = list(np.linspace(0, max_wind, 10))
 	for n in xrange(epochs):
 		if n != 0:
 			pool = eonn.epoch(pool, len(pool))
@@ -288,12 +286,10 @@ def find_best_lower(GP):
 	
 	return champion
 
-def find_best_upper(GP):
-	
-	epochs = 100
+def find_best_upper(GP, epochs = 100):
 	
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
-	all_z = list(np.linspace(0, 0.5, 10))
+	all_z = list(np.linspace(0, max_wind, 10))
 	for n in xrange(epochs):
 		if n != 0:
 			pool = eonn.epoch(pool, len(pool))
@@ -310,16 +306,19 @@ def find_best_upper(GP):
 def main():
 	""" Main function. """
 
-	epochs = 20
+
+	epochs = 50
+	repeats = 30
 	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
-	r_avg = np.empty(10)
-	pred_avg = np.empty(10)
-	r_lower = np.empty(10)
-	pred_lower = np.empty(10)
-	r_upper = np.empty(10)
-	pred_upper = np.empty(10)
-	for i in xrange(10):
+	r_avg = np.empty(repeats)
+	r_avg_lower = np.empty(repeats)
+	r_avg_upper = np.empty(repeats)
+	pred = np.empty(repeats)
+	pred_upper = np.empty(repeats)
+	pred_lower = np.empty(repeats)
+
+	for i in xrange(repeats):
 		for j in xrange(i*epochs, (i+1) * epochs):
 			pi_org, z_org = acquisition(GP, 100)
 			z = z_org.weights
@@ -332,41 +331,40 @@ def main():
 		champion_lower = find_best_lower(GP)
 		champion_upper = find_best_upper(GP)
 		
-		r = np.empty(10)
+		r = np.empty(repeats)
 
-		all_z = list(np.linspace(0, 0.5, 10))
+		all_z = list(np.linspace(0, max_wind, repeats))
 		for j,z in enumerate(all_z):
 			r[j] = cliff(champion_average.genome, z = [z])
 		r_avg[i] = np.average(r)
 		for j,z in enumerate(all_z):
 			r[j] = cliff(champion_lower.genome, z = [z])
-		r_lower[i] = np.average(r)
+		r_avg_lower[i] = np.average(r)
 		for j,z in enumerate(all_z):
 			r[j] = cliff(champion_upper.genome, z = [z])
-		r_upper[i] = np.average(r)
-		pred_avg[i] = champion_average.fitness
+
+		r_avg_upper[i] = np.average(r)
+
+		pred[i] = champion_average.fitness
 		pred_lower[i] = champion_lower.fitness
-		pred_upper[i] = champion_upper.fitness
+		pred_upper[i] = champion_upper.fitness	
 	
-	plt.plot(r_avg)
-	plt.plot(pred_avg)
-	plt.plot(r_lower)
-	plt.plot(pred_lower)
-	plt.plot(r_upper)
-	plt.plot(pred_upper)
-	plt.show()
-	plt.clf()
+	nr = '0'		
+	np.save('pred' + nr, pred)
+	np.save('pred_lower' + nr, pred_lower)
+	np.save('pred_upper' + nr, pred_upper)
 
-	data = {'r_avg' : list(r_avg), 'pred_avg' : list(pred_avg), 'r_lower' : list(r_lower), 'pred_lower' : list(pred_lower), 'r_upper' : list(r_upper), 'pred_upper' : list(pred_upper)}
-	with open('data.json','w') as w:
-		json.dump(data,w)
+	np.save('r_avg' + nr, r_avg)
+	np.save('r_avg_upper' + nr, r_avg_upper)
+	np.save('r_avg_lower' + nr, r_avg_lower)
 
-	champion = find_best(GP)
+	champion = find_best(GP,epochs = 500)
 	r = []
 	for _ in range(100):
 		r.append(cliff(champion.genome, verbose = True))
 	print sum(r)/len(r)
-	plt.show()
+	plt.savefig('performance_ULM_30*50_defaultGP_05wind'+nr)
+
 
 
 if __name__ == '__main__':
