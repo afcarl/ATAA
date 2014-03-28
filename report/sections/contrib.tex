@@ -29,7 +29,6 @@ We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $evaluate(pool)$ was si
 A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are Tournament Samplesize = 5, mutation probability = 0.75, mutation fraction = 0.2, mutation std = 1.0, and replacement probability = 0.2. 
 
 \subsection{Gaussian Process Co-Evolutionary Policy Search}
-% Kernel?
 
 The focus of our research is on developing a successful GP CEPS method. The main idea is to maintain a posterior distribution of the fitness $R_{\pi}^z$ over policies $\pi$ and outcomes $z$ with a Gaussian Process, where the outcome $z$ defines the nature of the stochastic transitions in an episode. \\
 Tackling a problem in such a way introduces two optimization problems. The first is finding the best policy from the posterior distribution $R_{\pi}^z$. We will refer to this as the \textit{primary optimization problem}. The second problem is how to select $\pi$,$z$ combinations to evaluate with a simulation, in order to update $R_{\pi}^z$. We will refer to this as the \textit{secondary optimization problem}. \\
