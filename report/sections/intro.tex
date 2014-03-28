@@ -16,7 +16,7 @@ A known issue in co-evolution is co-evolutionary forgetting \cite{forgetting}: p
 \end{figure}
 
 % Approach in general
-This posterior belief, as shown in figure \ref{fitnesslandscape}, attempts to map policy-outcome pairs to a reward. The challenge in this approach is to select appropriate pairs to evaluate and used to fit, called the acquisition function. Given a appropriate acquisition function, new data points are added to the landscape untill a stop condition is met. Afterwards the best policy is extracted from the gaussian process. \\
+This posterior belief, as shown in figure \ref{fitnesslandscape}, attempts to map policy-outcome pairs to a reward. The challenge in this approach is to select appropriate pairs to evaluate and used to fit, called the acquisition function. Given a appropriate acquisition function, new data points are added to the landscape until a stop condition is met. Afterwards the best policy is extracted from the Gaussian Process. We call this method \textbf{G}aussian \textbf{P}rocess - \textbf{C}o-\textbf{E}volutionary \textbf{P}olicy \textbf{S}earch, or \textbf{GP-CEPS} for short.\\
 
 % outro: outline rest of paper
 In the next section (\ref{background}) the background is provided, followed by related work (section \ref{related}). In section \ref{contrib} our approach is discussed in more detail, after which the experiments (\ref{experiments}) are shown. Lastly the results are discussed (section \ref{discussion}) and concluded (\ref{conclusion}).
