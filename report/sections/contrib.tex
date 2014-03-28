@@ -65,9 +65,7 @@ Where $c_3$ is a weighting factor and $\mathbf{\Pi}$ is the current pool of poli
 In order to somewhat simplify the problem, we design a Toy Problem on which we can test the GP-CEPS method. This way, we can start out with a smaller network, do not have long simulations, and can avoid long runtimes. Hereafter, we scale up the problem such that it is, comparable to the helicopter problem in the sense that the policy space has the same dimensionality. Specifically, we want to have the same amount of parameters to define the GP over. This way, the rewards as a function of the space spanned by policies and outcomes is comparable to that space in the Helicopter Control Problem.\\
 After some ideas, improvements and iterations, the toy problem we ended up with is moving to a goal from a fixed starting position in a 2D plane. A one-time gust of wind with fixed direction, but varying strength is added when x-coordinate 0.5 is passed. The problem is further defined by:
 
-
 \begin{itemize}
-
 \item State: position in continuous x-y coordinates, each of which ranges between 0 and 1 while on the plane.
 \item Actions: change in position in continuous x-y coordinates, with a maximum step size of 0.01 in both directions. 
 \item This is an episodic task: the episode ends after the agent either reaches the goal state, or moves off the grid.
