@@ -10,15 +10,20 @@ Specifically, %(activatiefuncie, aantal hidden, totaal aantal variabelen, blabla
 
 In order to compare the performance of the GP-CEPS method, we used evolutionary programming to find good weights for the described Neural Network. 
 The evolutionary algorithm we employed uses tournament selection to select organisms to breed with. The pipeline of the algorithm is as follows:\\ \\
-Initialize: create $N_{pool}$ policies\\
-Repeat for $N_{epochs}$:
-\begin{itemize}
-\item Evaluate the policies on $F_{score}$
-\item Select best $N_{best}$ policies with tournament selection
-\item Breed a new pool of policies from these $N_{best}$ policies
-\item Mutate the policies
-\end{itemize}
-Evaluate the policies on $F_{score}$ in order to select the best policy.\\ \\
+
+\begin{algorithm}[ht]
+  \caption{Genetic algorithm used for evolving organisms}
+  \begin{algorithmic}
+    \Input{$N \leftarrow$ epochs}
+    \Initialize{pool}
+    \For{t = 1 to N}
+      \State $evaluate(pool)$
+      \State $parents \leftarrow best(pool, 2)$
+      \State $pool \leftarrow evolve(parents)$
+    \EndFor
+    \State $bestOrganism \leftarrow best(pool,1)$
+  \end{algorithmic}
+\end{algorithm}
 
 We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $F_{score}$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
 A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are $Tournament Samplesize = 5$, $mutation probability = 0.75$, $mutation fraction = 0.2$, $mutation std = 1.0$, and $replacement probability = 0.2$. 
@@ -62,6 +67,8 @@ Where........and $\mathbf{\Pi}$ is the current pool of policies.
 In order to somewhat simplify the problem, we design a Toy Problem on which we can test the GP-CEPS method. This way, we can start out with a smaller network, do not have long simulations, and can avoid long runtimes. Hereafter, we scale up the problem such that it is, to some extent, comparable to the helicopter problem. Specifically, we want to have the same amount of parameters to define the GP over. This way, the rewards as a function of the space spanned by policies and outcomes is comparable to that space in the Helicopter Control Problem.\\
 %Do we need to describe earlier versions/iterations of the TP??
 After some ideas, improvements and iterations, the toy problem we ended up with is moving to a goal from a fixed starting position in a 2D plane. A one-time gust of wind with fixed direction, but varying strength is added when x-coordinate 0.5 is passed. The problem is further defined by:
+
+
 \begin{itemize}
 
 \item State: position in continuous x-y coordinates, each of which ranges between 0 and 1 while on the plane.
