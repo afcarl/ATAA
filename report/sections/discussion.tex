@@ -1,3 +1,16 @@
+As can be seen in Figure \ref{comparison}, Co-evolutionary policy search leads to a significant reduce in the number of epochs before convergence and thus a reduced sample complexity. 
+
+GP CEPS did not converge to the values that both evolutionary methods did (see Figure (....) ). In general, the Gaussian Procces did not seem to be able to learn the landscape of $R_{\pi}^z$. Figure \ref{•} shows that the confidence interval of the Gaussian Process does not decrease much, even after 1500 simulations. This means the Gaussian process does not become more certain about the predicted fitness of the policy with the highest predicted mean.
+There are multiple reasons why this might be the case and some of these lead to possible improvements. 
+
+One reason is that the effectiveness of the Gaussian Process depends on the hyperparameter settings. As illustrated in \ref{gp}, setting these parameters to the wrong values can lead to over- or undergeneralisation. In our Gaussian Procces we used  The implementation we used for the Gaussian Process did however include a maximum likelihood estimate for the kernel parameters of the squared exponential function (detailed in the Background Section) we used. However, it is not clear how well this works in highdimensional space. We tried specifying several different values for the precision, but none lead to better performance. 
+
+A second reason could lie in the nature of the reward   structure of our Toy Problem: the agent receives a reward for reaching the goal, but a negative reward for just missing the goal (which leads to the agent moving off the platform). This leads to a highly nonlinear landscape of $R_{\pi}^z$, which is hard to capture with a GP. 
+
+This nonlinearity might also complicate the primary optimization problem of finding the best predicted policy, but as the algorithm succeeds in finding the optimum in the policy space during Evolutionary Policy Search (of which the dimensionality is the same except for $z$), it seems unlikely that this is a problem and we did not look into this further, but used enough iterations.
+
+A final reason could be that a Gaussian Process can not learn to generalise well due to the sparsity created by high-dimensional space (here: 24 dimensions). This would severely restrict the applicability of GP CEPS, as most of the relevant problems will have a policy space with as many or more dimensions as our MLP policy.
+
 % Ideas: (no order)
 % hack
 % gp uncertainty issue
