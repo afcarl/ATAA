@@ -1,6 +1,6 @@
-As can be seen in Figure \ref{comparison}, Co-evolutionary policy search leads to a significant reduce in the number of epochs before convergence and thus a reduced sample complexity. 
+As can be seen in Figure \ref{compare_img}, Co-evolutionary policy search leads to a significant reduce in the number of epochs before convergence and thus a reduced sample complexity. 
 
-GP CEPS did not converge to the values that both evolutionary methods did (see Figure (....) ). In general, the Gaussian Procces did not seem to be able to learn the landscape of $R_{\pi}^z$. Figure \ref{•} shows that the confidence interval of the Gaussian Process does not decrease much, even after 1500 simulations. This means the Gaussian process does not become more certain about the predicted fitness of the policy with the highest predicted mean.
+GP CEPS did not converge to the values that both evolutionary methods did (see Figure (....) ). In general, the Gaussian Procces did not seem to be able to learn the landscape of $R_{\pi}^z$. Figure \ref{gp} shows that the confidence interval of the Gaussian Process does not decrease much, even after 1500 simulations. This means the Gaussian process does not become more certain about the predicted fitness of the policy with the highest predicted mean.
 There are multiple reasons why this might be the case and some of these lead to possible improvements. 
 
 As for the acquisition function, we tried many different versions of the score function in Equation \ref{score} and Equation \ref{score} 
