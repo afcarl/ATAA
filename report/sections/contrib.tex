@@ -51,12 +51,14 @@ However, in the current setting we want to select $\pi$, $z$ combinations. Furth
 
 \begin{align}
 Score_{\pi}(\pi ,\mathbf{Z}) = c_1 \sum_{i=1}^{N_{pool}} (R_{\pi}^{z_i} + c_2 \sigma_{\pi}^{z_i}(GP)) 
+\label{score}
 \end{align}
 where $\sigma_{\pi}^{z_i}(GP)$ is the current standard deviation of the predicted mean of the GP, and $\mathbf{Z}$ is the current pool of $z$. 
 
 The score for $z$ is defined as the variance over the expected returns for that $z$ and all $\pi$ in the pool:
 \begin{align}
 Score_z(z, \mathbf{\Pi}) = c_3 \cdot (\sum_{i=1}^{N_{pool}}(R_{\pi_i}^z-\sum_{i=1}^{N_{pool}}(R_{\pi_i}^z) )^2
+\label{score2}
 \end{align}
 Where $c_3$ is a weighting factor and $\mathbf{\Pi}$ is the current pool of policies.
 
