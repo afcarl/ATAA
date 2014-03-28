@@ -1,4 +1,4 @@
-The experiments consists of three sub experiments. In the first, baseline, experiment default evolutionary policy search is tested on the toy problem defined in section \ref{toyprob}. In the second experiment the effect of co-evolution is tested in order to validate the reduction of sample complexity and, lastly, in the third experiment GP CEPS is applied.
+The experiments consists of three sub experiments. In the first, baseline, experiment default evolutionary policy search is tested on the toy problem defined in section \ref{toyprob}. In the second experiment the effect of co-evolution is tested in order to validate the reduction of sample complexity and, thirdly, in the third experiment GP CEPS is applied. Lastly in order to anaalyze the certainty of the gaussian process, the predicted mean, upper bound and lower bound is examined when applying GP CEPS on the toy problem.
 
 \subsection{Evolutionary Policy Search}
 
@@ -39,5 +39,32 @@ Once again, an MLP with 4 hidden units was trained, and the same general evoluti
 
 \subsection{GP CEPS}
 
+In this experiment we apply GP CEPS to the same problem, restricting to policies with 4 hidden units. Figure \ref{Example policy learned with GP CEPS} shows the fitness of the policy found using the primary optimization problem. The x-axis denotes the amount of samples taken from the real world (so $x=200$ means $200$ samples). 
+
+% requires proper path
+%\begin{figure}[ht%]
+  %\centering
+  %\includegraphics[scale=0.5]{images/GPCEPS_True.png}
+  %\caption{Fitness during GP CEPS}\label{Fitness during GP CEPS}
+%\end{figure}
+
+% TODO: more info?
+In addition the predicted mean, upper confidence bound (UCB) and $lower confidence bound$ (LCB) is shown in figure \ref{Fitness during GP CEPS}. 
+
+%\begin{figure}[ht]
+  %\centering
+  %\includegraphics[scale=0.5]{images/GPCEPS_pred.png}
+  %\caption{Predicted mean, UCB and LCB during GP CEPS}\label{Fitness during GP CEPS}
+%\end{figure}
+
+
 \subsection{Comparison}
+In order to better compare the two evolutionary methods (without a GP) their results are shown together in figure \ref{compare_img}. It shows co-evulution leads to a steeper learning rate, whereas all policies of both methods eventually reach the target.
+
+%\begin{figure}[ht]
+  %\centering
+  %\includegraphics[scale=0.5]{images/compare.png}
+  %\caption{Comparing the performance normal and co-Evulationary algorithms in required samples}\label{compare_img}
+%\end{figure}
+
 
