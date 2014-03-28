@@ -1,9 +1,13 @@
-As can be seen in Figure \ref{comparison}, Co-evolutionary policy search leads to a significant reduce in the number of epochs before convergence and thus a reduced sample complexity. 
 
-GP CEPS did not converge to the values that both evolutionary methods did (see Figure (....) ). In general, the Gaussian Procces did not seem to be able to learn the landscape of $R_{\pi}^z$. Figure \ref{•} shows that the confidence interval of the Gaussian Process does not decrease much, even after 1500 simulations. This means the Gaussian process does not become more certain about the predicted fitness of the policy with the highest predicted mean.
+% co-evolution worked well (validated...?)
+As can be seen in Figure \ref{compare_img}, Co-evolutionary policy search leads to a significant reduce in the number of epochs before convergence and thus a reduced sample complexity. 
+
+% gp uncertainty issue
+GP CEPS did not converge to the values that both evolutionary methods did (figure \ref{Fitness during GP CEPS}). In general, the Gaussian Procces did not seem to be able to learn the landscape of $R_{\pi}^z$: Figure \ref{pred_img} shows that the confidence interval of the Gaussian Process does not decrease much, even after 1500 simulations. This means the Gaussian process does not become more certain about the predicted fitness of the policy with the highest predicted mean.
 There are multiple reasons why this might be the case and some of these lead to possible improvements. 
 
-One reason is that the effectiveness of the Gaussian Process depends on the hyperparameter settings. As illustrated in  \ref{gp}, setting these parameters to the wrong values can lead to over- or undergeneralisation. In our Gaussian Process we used  The implementation we used for the Gaussian Process did however include a maximum likelihood estimate for the kernel parameters of the squared exponential function (detailed in the Background Section) we used. However, it is not clear how well this works in highdimensional space. We tried specifying several different values for the precision, but none lead to better performance. 
+% reason 1 for uncertainty issue: hyperparameter settings
+One reason is that the effectiveness of the Gaussian Process depends on the hyperparameter settings. As illustrated in \ref{gp}, setting these parameters to the wrong values can lead to over- or undergeneralisation. The implementation we used for the Gaussian Process did, however, include a maximum likelihood estimate for the kernel parameters of the squared exponential function (detailed in the section \ref{background}) we used. However, it is not clear how well this works in highdimensional space. We tried specifying several different values for the precision, but none lead to better performance. 
 
 A second reason could lie in the nature of the reward   structure of our Toy Problem: the agent receives a reward for reaching the goal, but a negative reward for just missing the goal (which leads to the agent moving off the platform). This leads to a highly nonlinear landscape of $R_{\pi}^z$, which is hard to capture with a GP. 
 
@@ -13,12 +17,10 @@ A final reason could be that a Gaussian Process can not learn to generalise well
 
 % Ideas: (no order)
 % hack
-% gp uncertainty issue
 % finding best, after gp is found issue
 % toy problem issue: uniformly taken (do we want that?)
 % dimensionality of policy issue gp
 % limited applicability in problems with high dimensionality of z
 % kernel gaussian process, in general params GP general
-% co-evolution worked well (validated...?)
 % issue generalizing over strict border between good and bad policies 
 % tweaking is hard as many aspects of the approach are sort of black-box 
