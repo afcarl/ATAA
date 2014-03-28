@@ -4,7 +4,7 @@ In this section we will detail and motivate our approach.
 
 As discussed, we use a neural network as our policy. The inputs of such a network are the state and the outputs are the (encoded) action. Finding an optimal policy can then be defined as finding the optimal network topology and optimal weights for that topology.\\
 This was also done by \cite{koppejan2011neuroevolutionary} in their approach to the helicopter control problem. Using a fixed, engineered network topology and optimizing weights with evolutionary policy search was shown to produce better results than jointly optimizing the weights and the topology. Furthermore, a network with a single layer of weights performed far worse than an MLP. Therefore, we focus on optimizing weights for an MLP with a fixed topology.\\
-Specifically, %(activatiefuncie, aantal hidden, totaal aantal variabelen, blabla)
+Specifically, we used an Multi-Layer Perceptron (MLP) with 4 hidden units. As this network has two input units and two output units, this yields $2 \cdot 4 + 4 \cdot 2$ weights and $2+4+2$ biases for a total of 24 parameters. The problem requires negative and positive outputs, so a tanh activation function was used on the output of the last layer. As the representational power of the network increases if the hidden layer can output negative values, the tanh activation function seemed like the best option for the activation of the hidden layer, too. Preliminary tests showed that using tanh activation for the hidden units indeed yields better results than using a sigmoid activation function. 
 
 \subsection{Baseline: Evolutionary Policy Search}\label{evo_pol_search}
 
@@ -25,7 +25,7 @@ The evolutionary algorithm we employed uses tournament selection to select organ
   \end{algorithmic}
 \end{algorithm}
 
-We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $evaluate(pool)$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
+We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $evaluate(pool)$ is simply the rewards obtained when simulating an episode using the evaluated policy, averaged over five runs.  
 A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are Tournament Samplesize = 5, mutation probability = 0.75, mutation fraction = 0.2, mutation std = 1.0, and replacement probability = 0.2. 
 
 \subsection{Gaussian Process Co-Evolutionary Policy Search}
@@ -77,5 +77,5 @@ After some ideas, improvements and iterations, the toy problem we ended up with 
 \end{itemize} 
 
 \subsection{Contribution}
-This project investigates the possibility of reducing sample complexity for policy search by applying co-evolution. Additionally, our approach, as proposed by Dr. White, handles co-evolutionary forgetting by viewing the problem in a bayesian setting. If succesfull, it would indicate that GP CEPS is a promising approach for problems where sample complexity is the bottleneck. Lastly, by evaluating policies on explicit outcomes, GP CEPS provides insights into the relevance of events, as the outcomes $z$ are selected for their rareness and controlability.
+This project investigates the possibility of reducing sample complexity for policy search by applying co-evolution. Additionally, our approach, as proposed by Dr. White, handles co-evolutionary forgetting by viewing the problem in a Bayesian setting. If succesful, it would indicate that GP CEPS is a promising approach for problems where sample complexity is the bottleneck. Lastly, by evaluating policies on explicit outcomes, GP CEPS provides insights into the relevance of events, as the outcomes $z$ are selected for their rareness and controllability.
 
