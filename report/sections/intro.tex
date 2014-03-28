@@ -6,16 +6,16 @@
 
 
 % RL intro ( introducing helicopter too)
-Reinforcement learning is concerned with how agents should take actions in an environment such that the reward is maximized. The behavior of the agent (it's policy) is learned by repeatedly acting in an environment and receiving a reward for each action given the state of the environment. This can be done either by directly improving the current policy, as by directly searching for an optimal policy in the policy space. As interaction with the environment can potentially have high costs (such as an agent breaking down), a fundamental issue is the evaluation of a policy (as this often requires multiple trials). A key insight is that many trials are wasted because they do not focus on interesting events to evaluate policies on. 
+Reinforcement learning is concerned with how agents should take actions in an environment such that the reward is maximized. The policy of an agent (it's behavior) is learned by repeatedly acting in an environment and receiving a reward for each action given the state of the environment. This can be done either by directly improving the current policy, or by directly searching for an optimal policy in the policy space. As interaction with the environment can potentially have high costs, an agent might break down for example, a fundamental issue with this direct policy search is the evaluation of a policy as this often requires multiple trials. A key insight is that many trials are wasted because they do not focus on interesting events to evaluate policies on. 
 
 % TODO: in [ref helictor] for example, such and such results were produced, but in rare event this and that a large room for improvement was present.
 
 % Issue no controllable rare events are tested: solution = co-evolutionary approach
-Focusing on controllable rare events (defined in more detail in section \ref{background}) for policy search would improve efficiency significantly. In order to be able to focus on particular events we define an outcome $z$, which specifies the result of every stochastic transition that could occur in a given episode. Given a policy $\pi$ and outcome $z$, an episode is thus deterministic. Instead of wasting random trials (using non-informative $z$), this project leverages co-evolutionary principles to evolve both policies $\pi$ as outcomes $z$. The main idea is to improve the evolution process of the population policies by evaluating them on a population of outcomes, which are evolved specially to test the policies.
+Focusing on controllable rare events (defined in more detail in section \ref{background}) for policy search would improve efficiency significantly. In order to be able to focus on particular events we define an outcome $z$, which specifies the result of every stochastic transition that could occur in a given episode. Thus a given policy $\pi$ and outcome $z$, an episode is deterministic. Instead of wasting random trials on non-informative $z$, this project leverages co-evolutionary principles to evolve both policies $\pi$ aswell as outcomes $z$. The main idea is to improve the evolution process of the population policies by evaluating them on a population of outcomes, which are evolved specially to test the policies.
 
 % Issue evolutionary forgetting
 %Known issues.....
-
+Another known issue in co-evolution is co-evolutionary forgetting \cite{forgetting}. This can be seen as policies that excel against new predictors may perform poorly against older ones. This comes from the fact that the new polcies only get tested against these new outcomes and not the older ones. To solve this problem we maintain a posterior believe of the extended fitness landscape with a gaussian process, e.g. maintain a believe over how good a policy performs in combination with an outcome $z$.
 % Approach in general
 % maybe not necessary
 
