@@ -7,7 +7,6 @@ Reinforcement learning is concerned with how agents should take actions in an en
 Focusing on controllable rare events (defined in more detail in section \ref{background}) for policy search would improve efficiency significantly. In order to be able to focus on particular events we define an outcome $z$, which specifies the result of every stochastic transition that could occur in a given episode. Thus a given policy $\pi$ and outcome $z$, an episode is deterministic. Instead of wasting random trials on non-informative $z$, this project leverages co-evolutionary principles to evolve both policies $\pi$ aswell as outcomes $z$. The main idea is to improve the evolution process of the population policies by evaluating them on a population of outcomes, which are evolved specially to test the policies.
 
 % Issue evolutionary forgetting
-%Known issues.....
 A known issue in co-evolution is co-evolutionary forgetting \cite{forgetting}: policies that excel against new predictors may perform poorly against older ones. This comes from the fact that the new policies only get tested against these new outcomes, but not the older ones. By maintaining a posterior belief, in the form of a gaussian process, over the fitness of policy-outcome pairs previous found results can be remembered. 
 
 \begin{figure}[ht]
@@ -19,8 +18,7 @@ A known issue in co-evolution is co-evolutionary forgetting \cite{forgetting}: p
 % Approach in general
 This posterior belief, as shown in figure \ref{fitnesslandscape}, attempts to map policy-outcome pairs to a reward. The challenge in this approach is to select appropriate pairs to evaluate and used to fit, called the acquisition function. Given a appropriate acquisition function, new data points are added to the landscape untill a stop condition is met. Afterwards the best policy is extracted from the gaussian process. \\
 
-
 % outro: outline rest of paper
-In the next section (\ref{background}) the background is provided, followed by related work (section \ref{related}). In section \ref{contrib} our approach is discussed in more detail, after which the experiments (\ref{experiments}) are shown. Lastly the results are discussed (section ref{discussion}) and concluded (ref{conclusion}).
+In the next section (\ref{background}) the background is provided, followed by related work (section \ref{related}). In section \ref{contrib} our approach is discussed in more detail, after which the experiments (\ref{experiments}) are shown. Lastly the results are discussed (section \ref{discussion}) and concluded (\ref{conclusion}).
 
 
