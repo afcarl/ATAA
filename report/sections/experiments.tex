@@ -1,6 +1,8 @@
+The experiments consists of three sub experiments. In the first, baseline, experiment default evolutionary policy search is tested on the toy problem defined in section \ref{toyprob}. In the second experiment the effect of co-evolution is tested in order to validate the reduction of sample complexity and, lastly, in the third experiment GP CEPS is applied.
+
 \subsection{Evolutionary Policy Search}
 
-First, we ran evolutionary policy search on the Toy Problem discussed in Section 4.4 with an MLP Policy with 4 hidden units. We used the evolutionary parameters as detailed in Section 4.2. Figure \ref{Fitness during Evolutionary Algorithm} shows the fitness of the best policy in the pool over the number of epochs. This was averaged over ten runs and 95\% confidence intervals are shown. 
+In the evolutionary policy search approach the policies were restricted to those with 4 hidden units, and the parameters are as defined in section \ref{evo_pol_search}. Figure \ref{Fitness during Evolutionary Algorithm} is the average result of ten runs. The x-axis shows the amount of epochs (evoluations), and the y-axis represents the return of the best performing policy in the pool where 95\% confidence intervals are shown. For each epoch five evaluations are done per organism, and the pool size is 20. The performance on x-axis $30$ thus required $30 \times 5 \times 20$ samples. % TODO: ugly last sentence??
 
 \begin{figure}[ht]
   \centering
@@ -8,7 +10,7 @@ First, we ran evolutionary policy search on the Toy Problem discussed in Section
   \caption{Fitness during Evolutionary Algorithm}\label{Fitness during Evolutionary Algorithm}
 \end{figure}
 
-Figure \ref{Example policy learned with evolutionary algorithm} shows the performance of an example policy found with the evolutionary policy search algorithm, after 200 epochs. The wind is sampled from a uniform distribution between 0 and 0.5. Note that for all wind strengths, this policy reaches the goal. 
+Figure \ref{Example policy learned with evolutionary algorithm} shows the behavior of an example policy found with the evolutionary policy search algorithm, after 200 epochs. The wind is sampled from a uniform distribution between 0 and 0.5. Note that for all wind strengths, this policy reaches the goal. 
 
 \begin{figure}[ht]
   \centering
@@ -18,7 +20,7 @@ Figure \ref{Example policy learned with evolutionary algorithm} shows the perfor
 
 \subsection{Co-Evolutionary Policy Search}
 
-The results for Co-Evolutionary Policy Search are shown in Figure \ref{Fitness during Co-Evolutionary Algorithm}.  
+The results for Co-Evolutionary Policy Search are shown in Figure \ref{Fitness during Co-Evolutionary Algorithm}. 
 
 \begin{figure}[ht]
   \centering
@@ -26,7 +28,7 @@ The results for Co-Evolutionary Policy Search are shown in Figure \ref{Fitness d
   \caption{Fitness during Co-Evolutionary Algorithm}\label{Fitness during Co-Evolutionary Algorithm}
 \end{figure}
 
-Once again, an MLP with 4 hidden units was trained, and the same general evolutionary parameters from Section 4.2 were used. An example policy trained with Co-Evolutionary Policy Search for 200 epochs is visualized in Figure \ref{Example policy learned with Co-Evolutionary algorithm}. This policy too is able to reach the goal for any wind strength.
+Once again, an MLP with 4 hidden units was trained, and the same general evolutionary parameters from section \ref{evo_pol_search} were used. An example policy trained with Co-Evolutionary Policy Search for 200 epochs is visualized in Figure \ref{Example policy learned with Co-Evolutionary algorithm}. This policy, too, is able to reach the goal for any wind strength. The same sample complexity as in the first experiment applies.
 
 
 \begin{figure}[ht]
