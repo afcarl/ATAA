@@ -21,13 +21,11 @@ Repeat for $N_{epochs}$:
 Evaluate the policies on $F_{score}$ in order to select the best policy.\\ \\
 
 We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $F_{score}$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
-A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are $Tournament Samplesize = 5$, $mutation probability = 0.75$, $mutation fraction = 0.2$, $mutation std = 1.0$, and $replacement probability = 0.2$. 
+A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are Tournament Samplesize = 5, mutation probability = 0.75, mutation fraction = 0.2, mutation std = 1.0, and replacement probability = 0.2. 
 
 \subsection{Gaussian Process Co-Evolutionary Policy Search}
 
-The focus of our research is on developing a successful GP CEPS method. The main idea is to maintain a posterior distribution of the fitness $R_{\pi}^z$ over policies $\pi$ and outcomes $z$ 
-%is dat al gedefinieerd? 
-with a Gaussian Process, where the outcome $z$ defines the nature of the stochastic transitions in an episode. \\
+The focus of our research is on developing a successful GP CEPS method. The main idea is to maintain a posterior distribution of the fitness $R_{\pi}^z$ over policies $\pi$ and outcomes $z$ with a Gaussian Process, where the outcome $z$ defines the nature of the stochastic transitions in an episode. \\
 Tackling a problem in such a way introduces two optimization problems. The first is finding the best policy from the posterior distribution $R_{\pi}^z$. We will refer to this as the \textit{primary optimization problem}. The second problem is how to select $\pi$,$z$ combinations to evaluate with a simulation, in order to update $R_{\pi}^z$. We will refer to this as the \textit{secondary optimization problem}. \\
 Both these problems can be solved with an evolutionary algorithm. This reduces the challenge for both problems to defining a good score function for within the evolutionary algorithm.
 
@@ -44,23 +42,22 @@ This can be done numerically by sampling $z$ from $P(z)$ and averaging the predi
 Finding a good score measure for selecting $\pi$ and $z$ to simulate in order to update $R_{\pi}^z$ is much less trivial. As said, this can also be done with evolutionary programming, which reduces the problem to defining a good scoring measure. Of course, we want to obtain scores without actually simulating episodes in order to keep the sample complexity low, so in stead,  the information on $\pi$ and $z$ is extracted from the Gaussian Process. 
 
 We want to evaluate \textit{promising} policies, i.e. policies with high predicted returns. On the other hand, we also want to include enough exploration, so we also want to evaluate policies with low predicted returns if their uncertainty is high. Therefore, in a deterministic setting (without $z$), this might lead to a UCB-like approach. %include reference?? 
-However, in the current setting we want to select $\pi$, $z$ combinations. Furthermore, we want to select $z$ such that it is \textit{informative}: it must distinguish between policies. Taking these requirements into consideration, we defined the score for $\pi$ and $z$, respectively, as: 
+However, in the current setting we want to select $\pi$, $z$ combinations. Furthermore, we want to select $z$ such that it is \textit{informative}: it must distinguish between policies. Taking these requirements into consideration, we defined the score for $\pi$ as: 
 
 \begin{align}
 Score_{\pi}(\pi ,\mathbf{Z}) = c_1 \sum_{i=1}^{N_{pool}} (R_{\pi}^{z_i} + c_2 \sigma_{\pi}^{z_i}(GP)) 
 \end{align}
-where $\sigma_{\pi}^{z_i}(GP)$ is the current standard deviation of the predicted mean of the GP, and $\mathbf{Z}$ is the current pool of $z$.
+where $\sigma_{\pi}^{z_i}(GP)$ is the current standard deviation of the predicted mean of the GP, and $\mathbf{Z}$ is the current pool of $z$. 
+
+The score for $z$ is defined as the variance over the expected returns for that $z$ and all $\pi$ in the pool:
 \begin{align}
 Score_z(z, \mathbf{\Pi}) = c_3 \cdot (\sum_{i=1}^{N_{pool}}(R_{\pi_i}^z-\sum_{i=1}^{N_{pool}}(R_{\pi_i}^z) )^2
 \end{align}
-Where........and $\mathbf{\Pi}$ is the current pool of policies.
-%link to related work! 
-%explain why we use this approach, if not already done
+Where $c_3$ is a weighting factor and $\mathbf{\Pi}$ is the current pool of policies.
 
 \subsection{Toy Problem}
 
-In order to somewhat simplify the problem, we design a Toy Problem on which we can test the GP-CEPS method. This way, we can start out with a smaller network, do not have long simulations, and can avoid long runtimes. Hereafter, we scale up the problem such that it is, to some extent, comparable to the helicopter problem. Specifically, we want to have the same amount of parameters to define the GP over. This way, the rewards as a function of the space spanned by policies and outcomes is comparable to that space in the Helicopter Control Problem.\\
-%Do we need to describe earlier versions/iterations of the TP??
+In order to somewhat simplify the problem, we design a Toy Problem on which we can test the GP-CEPS method. This way, we can start out with a smaller network, do not have long simulations, and can avoid long runtimes. Hereafter, we scale up the problem such that it is, comparable to the helicopter problem in the sense that the policy space has the same dimensionality. Specifically, we want to have the same amount of parameters to define the GP over. This way, the rewards as a function of the space spanned by policies and outcomes is comparable to that space in the Helicopter Control Problem.\\
 After some ideas, improvements and iterations, the toy problem we ended up with is moving to a goal from a fixed starting position in a 2D plane. A one-time gust of wind with fixed direction, but varying strength is added when x-coordinate 0.5 is passed. The problem is further defined by:
 \begin{itemize}
 
