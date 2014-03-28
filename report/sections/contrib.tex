@@ -68,8 +68,8 @@ After some ideas, improvements and iterations, the toy problem we ended up with 
 \item Actions: change in position in continuous x-y coordinates, with a maximum step size of 0.01 in both directions. 
 \item This is an episodic task: the episode ends after the agent either reaches the goal state, or moves off the grid.
 \item Start state and goal state: The start state is (0.1,0.1) and the goal state is anywhere in the circle around (0.85, 0.85) with radius 0.15.
-\item Rewards: The agent receives +100 for reaching the goal state and -100 for moving off the grid. Rewards are discounted by a factor $\gamma =  0.99$.
-\item State transition: $s_t = s_{t-1} + a_t + w$, where wind w works in y-direction only, and %verdeling van windgrootte!!
+\item Rewards: The reward function is defined as $R = 100 * \gamma^{i}$ if the agent reaches the goal where $i$ is the amount of steps taken. While the reward function is defined as $-R$ when the agent moves off the grid. We ran our experiments with $\gamma = 0.99$
+\item State transition: $s_t = s_{t-1} + a_t + w$, where $w$ is the wind and sampled from a uniform distribution between 0 and 0.5
 \end{itemize} 
 
 \subsection{Contribution}
