@@ -1,7 +1,9 @@
+In this section we will detail and motivate our approach. 
+
 \subsection{Neural Network as Policy}
 
 As discussed, we use a neural network as our policy. The inputs of such a network are the state and the outputs are the (encoded) action. Finding an optimal policy can then be defined as finding the optimal network topology and optimal weights for that topology.\\
-This was also done by \ref{koppejan2011neuroevolutionary} in their approach to the helicopter control problem. Using a fixed, engineered network topology and finding good weights with evolutionary policy search was shown to produce better results than jointly optimizing the weights and the topology. Furthermore, a network with a single layer of weights performed far worse than an MLP. Therefore, we focus on optimizing weights for an MLP with a fixed topology.\\
+This was also done by \cite{koppejan2011neuroevolutionary} in their approach to the helicopter control problem. Using a fixed, engineered network topology and optimizing weights with evolutionary policy search was shown to produce better results than jointly optimizing the weights and the topology. Furthermore, a network with a single layer of weights performed far worse than an MLP. Therefore, we focus on optimizing weights for an MLP with a fixed topology.\\
 Specifically, %(activatiefuncie, aantal hidden, totaal aantal variabelen, blabla)
 
 \subsection{Baseline: Evolutionary Policy Search}
@@ -19,12 +21,41 @@ Repeat for $N_{epochs}$:
 Evaluate the policies on $F_{score}$ in order to select the best policy.\\ \\
 
 We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $F_{score}$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
-A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \ref{koppejan2011neuroevolutionary}. Further parameters used are $Tournament Samplesize = 5$, $mutation probability = 0.75$, $mutation fraction = 0.2$,$mutation std = 1.0$, and $replacement probability = 0.2$. 
+A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are $Tournament Samplesize = 5$, $mutation probability = 0.75$, $mutation fraction = 0.2$, $mutation std = 1.0$, and $replacement probability = 0.2$. 
 
 \subsection{Gaussian Process Co-Evolutionary Policy Search}
 
-% explain how we use GP ceps in stead of baseline
+The focus of our research is on developing a successful GP CEPS method. The main idea is to maintain a posterior distribution of the fitness $R_{\pi}^z$ over policies $\pi$ and outcomes $z$ 
+%is dat al gedefinieerd? 
+with a Gaussian Process, where the outcome $z$ defines the nature of the stochastic transitions in an episode. \\
+Tackling a problem in such a way introduces two optimization problems. The first is finding the best policy from the posterior distribution $R_{\pi}^z$. We will refer to this as the \textit{primary optimization problem}. The second problem is how to select $\pi$,$z$ combinations to evaluate with a simulation, in order to update $R_{\pi}^z$. We will refer to this as the \textit{secondary optimization problem}. \\
+Both these problems can be solved with an evolutionary algorithm. This reduces the challenge for both problems to defining a good score function for within the evolutionary algorithm.
+
+\subsubsection{Primary Optimization Problem}
+
+As mentioned, defining an appropriate score function allows us to solve this problem with an evolutionary algorithm. In order to find the best policy from $R_{\pi}^z$, we need to marginalize over $z$ to obtain the expected rewards for policy $\pi$, $R_{\pi}$: 
+\begin{align}
+V_{\pi} = \int R(\pi | z) P(z)dz 
+\end{align}
+This can be done numerically by sampling $z$ from $P(z)$ and averaging the predicted $R_{\pi}^z$ for the scored $\pi$ and sampled $\mathbf{z}$. The rest of the evolutionary algorithm, including the parameters, is as described in Section 4.2.
+
+\subsubsection{Secondary optimization problem: Acquisition Function}
+
+Finding a good score measure for selecting $\pi$ and $z$ to simulate in order to update $R_{\pi}^z$ is much less trivial. As said, this can also be done with evolutionary programming, which reduces the problem to defining a good scoring measure. Of course, we want to obtain scores without actually simulating episodes in order to keep the sample complexity low, so in stead,  the information on $\pi$ and $z$ is extracted from the Gaussian Process. 
+
+We want to evaluate \textit{promising} policies, i.e. policies with high predicted returns. On the other hand, we also want to include enough exploration, so we also want to evaluate policies with low predicted returns if their uncertainty is high. Therefore, in a deterministic setting (without $z$), this might lead to a UCB-like approach. %include reference?? 
+However, in the current setting we want to select $\pi$, $z$ combinations. Furthermore, we want to select $z$ such that it is \textit{informative}: it must distinguish between policies. Taking these requirements into consideration, we defined the score for $\pi$ and $z$, respectively, as: 
+
+\begin{align}
+Score_{\pi}(\pi ,\mathbf{Z}) = c_1 \sum_{i=1}^{N_{pool}} (R_{\pi}^{z_i} + c_2 \sigma_{\pi}^{z_i}(GP)) 
+\end{align}
+where $\sigma_{\pi}^{z_i}(GP)$ is the current standard deviation of the predicted mean of the GP, and $\mathbf{Z}$ is the current pool of $z$.
+\begin{align}
+Score_z(z, \mathbf{\Pi}) = c_3 \cdot (\sum_{i=1}^{N_{pool}}(R_{\pi_i}^z-\sum_{i=1}^{N_{pool}}(R_{\pi_i}^z) )^2
+\end{align}
+Where........and $\mathbf{\Pi}$ is the current pool of policies.
 %link to related work! 
+%explain why we use this approach, if not already done
 
 \subsection{Toy Problem}
 
@@ -42,4 +73,7 @@ After some ideas, improvements and iterations, the toy problem we ended up with 
 \end{itemize} 
 
 \subsection{Contribution}
+With this approach, we hope to be able to decrease the sample complexity for problems that typically rely on evolutionary policy search. Obtain good results with lower sample complexity than the sample complexity for evolutionary policy search would indicate that GP CEPS is a promising approach for problems where sample complexity is the bottleneck. \\
+Furthermore, if successful, this method could be applied in domains where co-evolutionary forgetting is troublesome.
+
 %how does this help science?--> information about GP proccess in such problems. Compare our results with expected results for heli problem. Include differences between probs or save for discussion?
