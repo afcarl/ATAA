@@ -1,13 +1,7 @@
-% co-evolution works 
-Firstly, Co-evolving $z$ with $\pi$ clearly leads to a lower sample complexity than baseline evolutionary policy search. 
+Firstly, Co-evolving $z$ with $\pi$ clearly leads to a lower sample complexity than baseline evolutionary policy search. This indicates that co-evolution approach towards policy search, as proposed by Dr. White, is promising and should be further examined.
 
-Further, the proposed method GP CEPS is non-trivial as it requires some requires some problem-specific engineering in a hard to track process. Further investigations in the shape of the development of the Gaussian Posterior over time and the shape of the true fitness landscape can aid designing a suitable GP and, subsequently, aqcuisition functions. Furthermore, theoretical guarantees might aid development of successful GP CEPS methods by provising insight in the number of samples necessary to achieve a certain result.
-
-% GP is non-trivial implementation
-  % parameters 
-
-% GP did not meet expectations, possible causes explained in discussion
+Furthermore, the proposed method GP CEPS is non-trivial as it requires some problem-specific engineering in a hard to track process. Further investigations in the shape of the development of the Gaussian Posterior over time and the shape of the true fitness landscape can aid designing a suitable GP and, subsequently, aqcuisition functions. 
 
 \subsection{Further research}
-% theoretical bounds more insights
+As described in the discussion (section \ref{discussion}, several causes can explain the lower than expected performance of the GP CESP. It would be interesting to further research the influence of each of these reasons. Firstly it would be interesting to research the performance of the GP CESP on a different problem, to test whether a non-linearity in the reward structure. Secondly, as the gaussian process depends on multiple parameters, further tweaking could potentially lead to better performance. In the current implementation, however, includes a maximum likelihood estimate for some parameters (e.g. the kernel parameters). Lastly, theoretical guarantees might aid development of successful GP CEPS methods by provising insight in the number of samples necessary to achieve a certain result.
 

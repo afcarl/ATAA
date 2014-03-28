@@ -9,11 +9,15 @@ There are multiple reasons why this might be the case and some of these lead to 
 % reason 1 for uncertainty issue: hyperparameter settings
 One reason is that the effectiveness of the Gaussian Process depends on the hyperparameter settings. As illustrated in \ref{gp}, setting these parameters to the wrong values can lead to over- or undergeneralisation. The implementation we used for the Gaussian Process did, however, include a maximum likelihood estimate for the kernel parameters of the squared exponential function (detailed in the section \ref{background}) we used. However, it is not clear how well this works in highdimensional space. We tried specifying several different values for the precision, but none lead to better performance. 
 
+% reason 2: toy problem bad?: second optimization problem
 A second reason could lie in the nature of the reward structure of our Toy Problem: the agent receives a reward for reaching the goal, but a negative reward for just missing the goal (which leads to the agent moving off the platform). This leads to a highly nonlinear landscape of $R_{\pi}^z$, which is hard to capture with a GP. 
 
-This nonlinearity might also complicate the primary optimization problem of finding the best predicted policy, but as the algorithm succeeds in finding the optimum in the policy space during Evolutionary Policy Search (of which the dimensionality is the same except for $z$), it seems unlikely that this is a problem and we did not look into this further other than allowing enough samples.
+% reason 2 extended: first optimization problem 
+This nonlinearity might also complicate the primary optimization problem of finding the best predicted policy. However, as the algorithm succeeds in finding the optimum in the policy space during Evolutionary Policy Search (of which the dimensionality is the same except for $z$), it seems unlikely that this is a problem and we did not look into this further other than allowing enough samples. 
 
+% reason 3: acquisition function
 The third reason could be that the acquisition function we defined is not serving the purpose it should. We opted for a relatively simple combination of terms, but as can be seen in figure \ref{pred_img} the GP is so uncertain about its prediction that the score function produces non-sensible results. This is not necessarily a problem of the acquisition function, because likely it can be solved by creating a GP that is more certain about its predictions.
 
+% reason final: sparsity high dimension
 A final reason could be that a Gaussian Process can not learn to generalise well due to the sparsity created by high-dimensional space (here: 24 dimensions). This would severely restrict the applicability of GP CEPS, as most of the relevant problems will have a policy space with as many or more dimensions as our MLP policy.
 
