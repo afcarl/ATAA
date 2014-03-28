@@ -14,18 +14,18 @@ The evolutionary algorithm we employed uses tournament selection to select organ
 \begin{algorithm}[ht]
   \caption{Genetic algorithm used for evolving organisms}
   \begin{algorithmic}
-    \Input{$N \leftarrow$ epochs}
-    \Initialize{pool}
+    \Input{$N \leftarrow$ N_{epochs}}
+    \Initialize{$pool \leftarrow randomPolicies(N_{pool}}
     \For{t = 1 to N}
       \State $evaluate(pool)$
-      \State $parents \leftarrow best(pool, 2)$
+      \State $parents \leftarrow best(pool, N_{best})$
       \State $pool \leftarrow evolve(parents)$
     \EndFor
     \State $bestOrganism \leftarrow best(pool,1)$
   \end{algorithmic}
 \end{algorithm}
 
-We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $F_{score}$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
+We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $evaluate(pool)$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
 A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are Tournament Samplesize = 5, mutation probability = 0.75, mutation fraction = 0.2, mutation std = 1.0, and replacement probability = 0.2. 
 
 \subsection{Gaussian Process Co-Evolutionary Policy Search}
