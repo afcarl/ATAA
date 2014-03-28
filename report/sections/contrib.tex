@@ -10,17 +10,22 @@ Specifically, %(activatiefuncie, aantal hidden, totaal aantal variabelen, blabla
 
 In order to compare the performance of the GP-CEPS method, we used evolutionary programming to find good weights for the described Neural Network. 
 The evolutionary algorithm we employed uses tournament selection to select organisms to breed with. The pipeline of the algorithm is as follows:\\ \\
-Initialize: create $N_{pool}$ policies\\
-Repeat for $N_{epochs}$:
-\begin{itemize}
-\item Evaluate the policies on $F_{score}$
-\item Select best $N_{best}$ policies with tournament selection
-\item Breed a new pool of policies from these $N_{best}$ policies
-\item Mutate the policies
-\end{itemize}
-Evaluate the policies on $F_{score}$ in order to select the best policy.\\ \\
 
-We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $F_{score}$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
+\begin{algorithm}[ht]
+  \caption{Genetic algorithm used for evolving organisms}
+  \begin{algorithmic}
+    \Input{$N \leftarrow$ N_{epochs}}
+    \Initialize{$pool \leftarrow randomPolicies(N_{pool}}
+    \For{t = 1 to N}
+      \State $evaluate(pool)$
+      \State $parents \leftarrow best(pool, N_{best})$
+      \State $pool \leftarrow evolve(parents)$
+    \EndFor
+    \State $bestOrganism \leftarrow best(pool,1)$
+  \end{algorithmic}
+\end{algorithm}
+
+We used $N_{pool} = 20$, $N_{best}$, $N_{epochs} = 100$. $evaluate(pool)$ was simply the rewards obtained in one episode simulation using the evaluated policy.  
 A detailed description of the implementation of tournament selection and how the policies are mutated can be found in \cite{koppejan2011neuroevolutionary}. Further parameters used are Tournament Samplesize = 5, mutation probability = 0.75, mutation fraction = 0.2, mutation std = 1.0, and replacement probability = 0.2. 
 
 \subsection{Gaussian Process Co-Evolutionary Policy Search}
@@ -59,8 +64,8 @@ Where $c_3$ is a weighting factor and $\mathbf{\Pi}$ is the current pool of poli
 
 In order to somewhat simplify the problem, we design a Toy Problem on which we can test the GP-CEPS method. This way, we can start out with a smaller network, do not have long simulations, and can avoid long runtimes. Hereafter, we scale up the problem such that it is, comparable to the helicopter problem in the sense that the policy space has the same dimensionality. Specifically, we want to have the same amount of parameters to define the GP over. This way, the rewards as a function of the space spanned by policies and outcomes is comparable to that space in the Helicopter Control Problem.\\
 After some ideas, improvements and iterations, the toy problem we ended up with is moving to a goal from a fixed starting position in a 2D plane. A one-time gust of wind with fixed direction, but varying strength is added when x-coordinate 0.5 is passed. The problem is further defined by:
-\begin{itemize}
 
+\begin{itemize}
 \item State: position in continuous x-y coordinates, each of which ranges between 0 and 1 while on the plane.
 \item Actions: change in position in continuous x-y coordinates, with a maximum step size of 0.01 in both directions. 
 \item This is an episodic task: the episode ends after the agent either reaches the goal state, or moves off the grid.
@@ -70,7 +75,5 @@ After some ideas, improvements and iterations, the toy problem we ended up with 
 \end{itemize} 
 
 \subsection{Contribution}
-With this approach, we hope to be able to decrease the sample complexity for problems that typically rely on evolutionary policy search. Obtain good results with lower sample complexity than the sample complexity for evolutionary policy search would indicate that GP CEPS is a promising approach for problems where sample complexity is the bottleneck. \\
-Furthermore, if successful, this method could be applied in domains where co-evolutionary forgetting is troublesome.
+This project investigates the possibility of reducing sample complexity for policy search by applying co-evolution. Additionally, our approach, as proposed by Dr. White, handles co-evolutionary forgetting by viewing the problem in a bayesian setting. If succesfull, it would indicate that GP CEPS is a promising approach for problems where sample complexity is the bottleneck. Lastly, by evaluating policies on explicit outcomes, GP CEPS provides insights into the relevance of events, as the outcomes $z$ are selected for their rareness and controlability.
 
-%how does this help science?--> information about GP proccess in such problems. Compare our results with expected results for heli problem. Include differences between probs or save for discussion?
