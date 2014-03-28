@@ -1,10 +1,3 @@
-% ver 1 Still used for inspiration!
-%In Reiforcement Learning an agent learns a policy by repeatedly acting in an environment and getting a reward for that action. In most Reinforcement Learning algorithms the agent learns a optimal policy by iteratively improving its current policy. However there is a class called normal direct policy-search methods where an agent finds its policy by directly searching the space of all possible policies. Because all policies have to be evaluated there is a lot of strain on the environment, where every action can put the agent in a bad state, these states might be costly, e.g. a robot-agent might break down because of its actions. To alleviate these problems in direct policy search methods we propose a new method. In our method we try to minimize the amount of policies that will be evaluated and still find an optimal policy. To do this we focus on controllable rare-events. These are events that occur infrequently where the agent could greatly influence the effect of the event. This means that some policies perform better than others in these events, making these events critical to distinguish between policies. In \cite{koppejan2011neuroevolutionary} it is shown that it is easy to find a policy that works $99\%$ of the time. But because the other $1\%$ of the time occurs so infrequently it is hard for an agent to learn to cope with these. 
-%We use co-evolution[ref coevo] to train a pool of agents and a pool of organisms that govern the stochastic nature of the environment, called outcomes. With this we hope to train the agents in such a way that they will learn to behave optimally against all outcome-organisms. However there is'co-evolutionary forgetting'[REF CO-Forget]. Where an agent has learned a certain behaviour that performs well against the other pool, but as this pool changes it forgets this behaviour as it is not as good against the new organisms, when it encounters new organisms against which this behaviour was good it will have forgotten how it should act. In our case this can be seen as the situation where an agent forgets how to behave optimally against outcome-organisms that were present in the past. To fight this problem we maintain a posterior believe of the extended fitness landscape, how a policy works against a outcome-organism. We maintain this believe by using a Gaussian Process.
-
-% end ver 1 used for inspiration
-
-
 % RL intro ( introducing helicopter too)
 Reinforcement learning is concerned with how agents should take actions in an environment such that the reward is maximized. The policy of an agent (it's behavior) is learned by repeatedly acting in an environment and receiving a reward for each action given the state of the environment. This can be done either by directly improving the current policy, or by directly searching for an optimal policy in the policy space. As interaction with the environment can potentially have high costs, an agent might break down for example, a fundamental issue with this direct policy search is the evaluation of a policy as this often requires multiple trials. A key insight is that many trials are wasted because they do not focus on interesting events to evaluate policies on. 
 
@@ -15,9 +8,17 @@ Focusing on controllable rare events (defined in more detail in section \ref{bac
 
 % Issue evolutionary forgetting
 %Known issues.....
-Another known issue in co-evolution is co-evolutionary forgetting \cite{forgetting}. This can be seen as policies that excel against new predictors may perform poorly against older ones. This comes from the fact that the new polcies only get tested against these new outcomes and not the older ones. To solve this problem we maintain a posterior believe of the extended fitness landscape with a gaussian process, e.g. maintain a believe over how good a policy performs in combination with an outcome $z$.
+A known issue in co-evolution is co-evolutionary forgetting \cite{forgetting}: policies that excel against new predictors may perform poorly against older ones. This comes from the fact that the new policies only get tested against these new outcomes, but not the older ones. By maintaining a posterior belief, in the form of a gaussian process, over the fitness of policy-outcome pairs previous found results can be remembered. 
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[scale=0.5]{images/fitness-landscape.png}
+  \caption{Extended fitness landscape, where the reward is plotted given a policy $\pi$ and outcome $z$}\label{fitnesslandscape}
+\end{figure}
+
 % Approach in general
-% maybe not necessary
+This posterior belief, as shown in figure \ref{fitnesslandscape}, attempts to map policy-outcome pairs to a reward. The challenge in this approach is to select appropriate pairs to evaluate and used to fit, called the acquisition function. Given a appropriate acquisition function, new data points are added to the landscape untill a stop condition is met. Afterwards the best policy is extracted from the gaussian process. 
+
 
 % outro: outline rest of paper
 % In section....
