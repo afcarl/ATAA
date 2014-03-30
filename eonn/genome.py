@@ -156,6 +156,8 @@ class Genome(list):
 		for i,gene in enumerate(self):
 			w[i] = gene.dna[-1]
 		return w
+
+"""From here down the code is by us. This class was created for evolving z"""
 		
 class BasicGenome(list):
 	""" A genome is a collection of genes and encodes a neural network. """

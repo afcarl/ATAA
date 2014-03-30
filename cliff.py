@@ -1,15 +1,19 @@
+#Main file
+#Authors: Luka Stout, Sammie Katt, Otto Fabius, Joost van Amersfoort
+
+#Implements toy problem, co-evolution and GP-CEPS
+
 from __future__ import division
 
 from eonn import eonn
 from eonn.genome import Genome, BasicGenome
 from eonn.organism import Pool, Organism
 from eonn.network import Network
+
 import numpy as np
 from matplotlib import pyplot as plt
 import random as rand
 import itertools
-import math
-import json
 from sklearn.gaussian_process import GaussianProcess
 
 try:
@@ -27,7 +31,9 @@ GOALRADIUS = 0.15
 
 WINDSTRENGTH = [0,0]
 max_wind = 0.5
- 
+
+# Define which Neural network to use for the policy
+# cliff.net is with a Hidden Layer, while noHidden.net is without.
 NN_STRUCTURE_FILE = 'cliff.net'
 
 def update(pos, action):
@@ -45,6 +51,7 @@ def checkGoal(pos):
 	return dist < GOALRADIUS
 
 def draw(l):
+	""" Create a plot that shows the behavior of the policy """
 	x = [s[0] for s in l]
 	y = [s[1] for s in l]
 	plt.scatter(x,y, marker = 'x')
@@ -211,7 +218,7 @@ def acquisition(GP, epochs):
 	return pi_org, z_org
 	
 def initGP():
-	"""Do 2 simulations with random pi,z and create GP, X, y"""
+	"""Do simulations with random pi,z and create GP, X, y"""
 	poolsize = 68
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE), poolsize, std = 10)
 	X = []
@@ -223,6 +230,7 @@ def initGP():
 		reward = cliff(genome,z)
 
 		while reward <= 0 and len(X) < poolsize/2:
+			#Train input policies to reach the goal.
 			for gene in org.genome:
 				gene.mutate()
 			org.mutate()
@@ -238,7 +246,7 @@ def initGP():
 			X = np.append(X,[w+z],axis = 0)
 			y = np.append(y, [reward])
 	
-	#Maybe use other kernel?
+	# Initialize GP with kernel parameters.
 	GP = GaussianProcess(theta0=0.1, thetaL=.001, thetaU=1.)
 
 	GP.fit(X,y)
@@ -253,7 +261,7 @@ def updateGP(GP,X,y,w,z,reward):
 
 
 def find_best(GP, epochs = 100):
-		
+	""" Find the best policy in the GP """
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
 	all_z = list(np.linspace(0, max_wind, 10))
 	for n in xrange(epochs):
@@ -269,8 +277,7 @@ def find_best(GP, epochs = 100):
 	return champion
 
 def find_best_lower(GP, epochs = 100):
-	
-	
+	""" Find policy with highest lowerbound """
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
 	all_z = list(np.linspace(0, max_wind, 10))
 	for n in xrange(epochs):
@@ -287,7 +294,7 @@ def find_best_lower(GP, epochs = 100):
 	return champion
 
 def find_best_upper(GP, epochs = 100):
-	
+	""" Find policy with highest upperbound """
 	pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),50, std = 8)
 	all_z = list(np.linspace(0, max_wind, 10))
 	for n in xrange(epochs):
@@ -304,10 +311,12 @@ def find_best_upper(GP, epochs = 100):
 	return champion
 
 def main():
-	""" Main function. """
+	""" Main function, initializes everything and runs the epochs"""
 
-
+	#Amount of epoch
 	epochs = 50
+
+	#Amount of repetitions (at the end of each repetition 'find best' is run)
 	repeats = 30
 	np.set_printoptions(precision=3)
 	GP,X,y = initGP()
