@@ -368,7 +368,42 @@ def main():
 	print sum(r)/len(r)
 	plt.plot()
 	plt.savefig('performance_%d*%d_%s' % (epochs,repeats,nr))
+
+def coevo():
+	# Create a pool for the policies
+	pi_pool = Pool.spawn(Genome.open(NN_STRUCTURE_FILE),20,std = 8)
+
+	# Create a pool of z's, starting around [0.5,0.5], should probably be better
+	z_list =[[x] for x in np.linspace(0,0.5,5)]
+
+	genomes = BasicGenome.from_list(z_list, 5)
+	org_list = [Organism(genome) for genome in genomes]
+	z_pool  = Pool(org_list)
+	avg_fitness = []
+	champ_fitness = []
+	for i in xrange(150):
+		pi_pool = eonn.epoch(pi_pool,len(pi_pool))
+		z_pool = eonn.epoch(z_pool, len(z_pool))
+		for pi_org, z_org in itertools.product(pi_pool,z_pool):
+			reward = cliff(pi_org.genome,z = [z_org.weights[0]],verbose = False)
+			pi_org.evals.append(reward)
+			z_org.evals.append(reward)
+		for org in z_pool:
+			org.evals = [np.var(org.evals)]
+
+		avg_fitness.append(pi_pool.fitness)
+		champion = max(pi_pool)
+		champ_fitness.append(champion.fitness)
+	return avg_fitness,champ_fitness
 	
 
 if __name__ == '__main__':
-	main()
+	avg_fitness = []
+	champ_fitness = []
+	for i in range(10):
+		avg, champ = coevo()
+		avg_fitness.append(avg)
+		champ_fitness.append(champ)
+		print "EPOCH ", i, "DONE"
+	np.save('avg_fitness',avg_fitness)
+	np.save('champ_fitness',champ_fitness)
